@@ -790,6 +790,67 @@ Browser, ebenfalls Folge desselben Tippfehlers, behoben mit derselben Korrektur.
 knapp gehalten (s. o.); bei Bedarf ließe sich das erweitern, sobald klar ist, ob
 die volle Detailtreue während der Bearbeitung tatsächlich gebraucht wird.
 
+### Nachbesserung: Modal statt Aufklappen (auf Nutzerfeedback)
+
+Die `<details>`-Variante wirkte pro Zeile überladen — Plus/Minus/Move/Hoch/Runter
+nebeneinander, nur um drei Kennzahlen zu verwalten. Umgebaut auf Wunsch: jede
+Zeile jetzt nur noch **Drag-Griff · Zusammenfassung · Stift · Mülleimer**;
+Bearbeitung öffnet ein Bootstrap-Modal mit dem vollständigen Formular. Der
+globale „+"-Button in der Werkzeugleiste bleibt (einzige Stelle zum Hinzufügen);
+pro Zeile gibt es kein eigenes Plus mehr, und die Hoch/Runter-Pfeile sind
+komplett entfallen — nur noch Ziehen per Maus.
+
+**Barrierefreiheits-Kompromiss, bewusst eingegangen:** ohne Hoch/Runter-Buttons
+gibt es keinen tastatur- oder screenreader-bedienbaren Weg mehr, eine Zeile
+umzusortieren — reines Maus-Drag ist für diese Nutzergruppen nicht erreichbar.
+Bei typischerweise drei Kennzahlen ist der Verlust in der Praxis gering
+(Löschen + Neuanlegen in der gewünschten Reihenfolge ist ein Umweg, aber
+machbar), sollte aber nicht stillschweigend untergehen.
+
+**Vorher geklärt, weil es exakt in die Kalender-Feld-Falle aus Slice 1 gelaufen
+wäre:** `joomla-field-subform.js` benennt beim Klonen einer neuen Zeile nur
+Elemente mit einem `name`-Attribut um (`fixUniqueAttributes()` läuft über
+`row.querySelectorAll('[name]')`). Eine selbst vergebene Modal-`id` (kein
+`name`) bliebe für jede neue Zeile wortwörtlich `"figuresX"` — mit zwei neuen
+Zeilen zwei Modals mit identischer ID, `data-bs-target` träfe immer nur das
+erste. Verifiziert (nicht nur gelesen): zwei Zeilen hintereinander per „+"
+angelegt, beide IDs eindeutig (`dm-modal-figures6`, `dm-modal-figures7`).
+
+Die Lösung braucht keine eigene Umbenennungslogik: die Webkomponente feuert
+nach dem Klonen ein `subform-row-add`-Event (bubbelnd) mit der fertig
+umbenannten Zeile im Detail — zu dem Zeitpunkt trägt `row.dataset.group`
+bereits den echten, eindeutigen Namen. `admin-figures.js` hört genau darauf,
+kopiert den Namen in die Modal-`id` und den `data-bs-target` der Zeile und
+öffnet das Modal direkt (`trigger.click()`) — die neue, leere Zeile geht damit
+sofort in die Bearbeitung statt eine leere Zusammenfassung zu zeigen.
+
+Zwei weitere Bootstrap-Mechanismen mussten vorher stimmen:
+
+- Bootstraps `[data-bs-toggle="modal"]`-Aktivierung ist **delegiert auf
+  `document`** (`EventHandler.on(document, 'click.bs.modal.data-api',
+  '[data-bs-toggle="modal"]', …)`), nicht pro Element beim Laden verdrahtet —
+  funktioniert deshalb automatisch auch für Zeilen, die erst nach dem
+  Seitenaufbau hinzukommen.
+- Bootstraps eigene Events (`hidden.bs.modal` etc.) bubbeln standardmäßig
+  (`EventHandler.trigger()` setzt `bubbles: true`, sofern kein jQuery
+  eingreift) — ein einziger `document`-Listener für die
+  Zusammenfassungs-Aktualisierung reicht für alle Zeilen, auch neu
+  hinzugefügte.
+
+Bootstraps Modal-JS (`bootstrap.modal`) ist als eigenständiges Web-Asset
+registriert und wird jetzt explizit geladen (`$wa->useScript('bootstrap.modal')`),
+statt sich darauf zu verlassen, dass es durch Zufall schon da ist.
+
+**Verifiziert:** Modal öffnet mit allen Feldern, Bearbeiten + Schließen
+aktualisiert die Zusammenfassung, zwei neu angelegte Zeilen bekommen
+eindeutige IDs und öffnen sich beide automatisch, Drag-Handle löst weiterhin
+`draggable="true"` beim Gedrückthalten aus (unverändertes Core-Verhalten),
+Löschen funktioniert. Speicher-Roundtrip erneut geprüft — inklusive einer
+Bearbeitung durch das Modal hindurch —, JSON vor/nach identisch. Auf Joomla
+6.1.3 aus dem neu gebauten Paket per Upgrade-Installation getestet: gleiches
+Verhalten, keine Konsolenfehler. Volle Regression (`phpcs`, 72 Unit-Tests, 16
+Zähl-Checks, Formatierungsparität) unverändert grün.
+
 ---
 
 ## v1.1+ (nicht jetzt)

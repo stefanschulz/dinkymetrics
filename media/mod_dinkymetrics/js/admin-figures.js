@@ -6,14 +6,22 @@
  * @license     GNU General Public License version 3 or later; see LICENSE.txt
  * @link        https://www.the-loom.de
  *
- * Keeps a figure row's collapsed summary in step with what was just typed.
+ * Two small, unrelated jobs for the Figures list's admin edit screen:
  *
- * Presentation only, admin edit screen only: this mirrors src/Field/FigureSummary.php's
- * wording in JS, but reads straight from the DOM rather than duplicating translated
- * strings — the currently selected <option>'s text is already in the right language.
- * Recomputed once, when a row's <details> is closed, not on every keystroke: while a row
- * is open the editor is looking at the real fields anyway, and a fresh row added via
- * "+" starts open, so there is nothing stale to show before the first edit.
+ * 1. Keep a row's one-line summary in step with what was just edited in its modal.
+ *    Presentation only: mirrors src/Field/FigureSummary.php's wording, but reads
+ *    straight from the DOM rather than duplicating translated strings — the currently
+ *    selected <option>'s text is already in the right language. Recomputed once, when
+ *    the modal finishes closing, not on every keystroke.
+ *
+ * 2. Give a freshly added row's modal a real, unique id and open it straight away.
+ *    joomla-field-subform.js only renames attributes on elements that carry a `name`
+ *    (see fixUniqueAttributes in joomla-field-subform.js) — a hand-authored id like
+ *    "dm-modal-figuresX" on our own <div class="modal"> is invisible to that logic and
+ *    would stay literally "figuresX" in every row added after the first, breaking
+ *    data-bs-target. Its own "subform-row-add" event fires after that renaming has
+ *    already happened, so by the time it reaches us the row's real group name
+ *    (row.dataset.group) is already correct — we only need to copy it onto the modal.
  */
 
 ((doc) => {
@@ -27,7 +35,7 @@
   };
 
   // Category/parent options are indented with dashes and non-breaking spaces for depth.
-  const cleanCategoryText = (text) => text.replace(/^[\s -]+/, '');
+  const cleanCategoryText = (text) => text.replace(/^[\s -]+/, '');
 
   const withPrefixSuffix = (row, text) => {
     const prefix = value(row, '[prefix]');
@@ -73,20 +81,14 @@
   };
 
   /**
-   * @param {HTMLDetailsElement} details
+   * @param {HTMLElement} row  The .dinkymetrics-figure wrapper whose modal just closed.
    * @returns {void}
    */
-  const refresh = (details) => {
-    const row = details.closest('.dinkymetrics-figure');
-
-    if (!row) {
-      return;
-    }
-
+  const refreshSummary = (row) => {
     const { caption, sourceText, detail } = summarise(row);
-    const captionEl = details.querySelector('.dinkymetrics-figure__caption');
-    const sourceEl = details.querySelector('.dinkymetrics-figure__source');
-    let detailEl = details.querySelector('.dinkymetrics-figure__detail');
+    const captionEl = row.querySelector('.dinkymetrics-figure__caption');
+    const sourceEl = row.querySelector('.dinkymetrics-figure__source');
+    let detailEl = row.querySelector('.dinkymetrics-figure__detail');
 
     if (captionEl && caption) {
       captionEl.textContent = caption;
@@ -108,16 +110,37 @@
     }
   };
 
-  // The native "toggle" event does not bubble, so listening on the document only works
-  // in the capture phase — which is exactly what lets one delegated listener cover rows
-  // the joomla-field-subform web component adds after this script has already run.
-  doc.addEventListener(
-    'toggle',
-    (event) => {
-      if (event.target instanceof HTMLDetailsElement && event.target.matches('.dinkymetrics-figure__details')) {
-        refresh(event.target);
-      }
-    },
-    true
-  );
+  // hidden.bs.modal bubbles (Bootstrap's EventHandler.trigger defaults to bubbles: true),
+  // so one delegated listener on the document covers every row, present now or added
+  // later.
+  doc.addEventListener('hidden.bs.modal', (event) => {
+    const row = event.target.closest?.('.dinkymetrics-figure');
+
+    if (row) {
+      refreshSummary(row);
+    }
+  });
+
+  doc.addEventListener('subform-row-add', (event) => {
+    const row = event.detail?.row;
+
+    if (!(row instanceof HTMLElement) || !row.matches('.dinkymetrics-figure')) {
+      return;
+    }
+
+    const modal = row.querySelector('.dinkymetrics-figure__modal');
+    const trigger = row.querySelector('.dinkymetrics-figure__edit');
+
+    if (!modal || !trigger) {
+      return;
+    }
+
+    const modalId = `dm-modal-${row.dataset.group}`;
+    modal.id = modalId;
+    trigger.setAttribute('data-bs-target', `#${modalId}`);
+
+    // The new row is empty; go straight to editing it rather than showing a blank
+    // summary line that the editor would have to click into anyway.
+    trigger.click();
+  });
 })(document);

@@ -10,9 +10,10 @@
  *
  * The Figures subform wrapper. A close copy of Joomla's own
  * layouts/joomla/form/field/subform/repeatable.php — same <joomla-field-subform> markup
- * and button wiring, so add/remove/drag-reorder are untouched core behaviour — except
- * each row renders through this module's own "row" sublayout (collapsed summary, details
- * expand for the full fields) instead of core's "section" (every field always visible).
+ * and button wiring, so remove and drag-reorder are untouched core behaviour — except
+ * each row renders through this module's own "row" sublayout (a compact summary line;
+ * editing happens in a Bootstrap modal) instead of core's "section" (every field always
+ * visible), and there is only the one, global "add" button — see row.php's docblock.
  *
  * @var  Form    $tmpl      The empty template form, used to render a fresh row.
  * @var  array   $forms     One Form instance per existing row.
@@ -37,6 +38,9 @@ extract($displayData);
 if ($multiple) {
     $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
     $wa->useScript('webcomponent.field-subform');
+    // Loaded explicitly rather than assumed: nothing else on this page is guaranteed to
+    // have already pulled in Bootstrap's modal component.
+    $wa->useScript('bootstrap.modal');
 
     // Not loaded automatically — see the same call in tmpl/default.php.
     $wa->getRegistry()->addExtensionRegistryFile('mod_dinkymetrics');
@@ -64,16 +68,16 @@ $class = $class ? ' ' . $class : '';
     foreach ($forms as $k => $form) :
         echo $this->sublayout('row', [
             'form' => $form, 'basegroup' => $fieldname, 'group' => $fieldname . $k,
-            'buttons' => $buttons, 'isTemplate' => false,
+            'buttons' => $buttons,
         ]);
     endforeach;
     ?>
     <template class="subform-repeatable-template-section hidden"><?php
-        // The freshly-cloned row starts expanded: it is empty, so there is nothing yet for
-        // a one-line summary to say, and the editor is about to fill it in anyway.
+        // admin-figures.js opens this row's modal as soon as it is cloned and has a real
+        // group name — it is empty, so the editor goes straight to filling it in.
         echo trim($this->sublayout('row', [
             'form' => $tmpl, 'basegroup' => $fieldname, 'group' => $fieldname . 'X',
-            'buttons' => $buttons, 'isTemplate' => true,
+            'buttons' => $buttons,
         ]));
         ?></template>
     </joomla-field-subform>

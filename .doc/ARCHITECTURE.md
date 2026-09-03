@@ -134,8 +134,14 @@ Recorded so they cost nobody time twice. The full accounts are in the workplan.
   runs.
 - **`XML_DESCRIPTION` belongs in the `.ini` as well as the `.sys.ini`**, because the module
   edit form loads only the former.
-- **A `calendar` field inside a repeatable subform loses picked dates** in rows added in
-  the browser; the date is a text field with a pattern for that reason.
+- **A repeatable subform's clone-rename only touches elements with a `name` attribute**
+  (`joomla-field-subform.js`'s `fixUniqueAttributes()` walks `row.querySelectorAll('[name]')`).
+  Anything else you hand-author with an id referencing the row's group — a `calendar`
+  field's button (`id="…figuresX…"`, no `name`; loses picked dates in rows added in the
+  browser, hence a plain text field instead), or this module's own per-row modal id — stays
+  literally `"figuresX"` in every newly added row. The modal id is instead set from
+  `row.dataset.group` in `admin-figures.js`, on the bubbling `subform-row-add` event the
+  component fires right after it has done its own renaming — no need to reimplement it.
 - **A `requestAnimationFrame` timestamp can predate the tween's start time**, so the
   progress has to be clamped at both ends or the first frame flashes a negative number.
 - **A custom form field type needs no `field/` folder.** Set `addfieldprefix` on
