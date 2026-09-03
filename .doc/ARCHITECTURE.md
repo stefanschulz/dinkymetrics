@@ -153,4 +153,23 @@ Recorded so they cost nobody time twice. The full accounts are in the workplan.
 - **The subform's drag-to-reorder is native, not a library** — `joomla-field-subform.js`
   wires plain HTML5 `draggable` to whatever carries the `.group-move` class, inside a
   `.subform-repeatable-group` wrapper. Keep those two classes on a custom row layout and
-  reordering, and its up/down-button fallback, keep working with no extra code.
+  reordering, and its up/down-button fallback (`.group-move-up`/`.group-move-down`,
+  including wrap-around at the first/last row), keep working with no extra code. Grepping
+  the file for those literal class names finds nothing — they are built at runtime as
+  `` `${buttonMove}-up` `` — so confirm by clicking the button, not by reading the source
+  and concluding it is unwired.
+- **Atum 6 defines two, non-interchangeable sets of colour tokens.** Bootstrap 5.3's own
+  de-prefixed tokens (`--border-color`, `--body-color`, `--secondary-color`,
+  `--tertiary-bg`, …) are redefined per `[data-bs-theme]` and are genuinely dark-mode-safe;
+  the classic Sass-derived ones (`--dark`, `--gray-600`, `--primary`, …) exist only in the
+  light-theme block and keep their light value under dark mode. Neither set is guessing
+  material — use Bootstrap's own utility classes in the markup (`bg-body-tertiary`,
+  `text-body-secondary`, `border`) instead of a hand-picked `var(--name, #fallback)`; a
+  wrong guess (`--component-bg` does not exist here) fails silently to the fallback colour,
+  which reads fine in light mode and can render invisible text in dark mode.
+- **Every Bootstrap modal in the Joomla admin has its padding zeroed** by Atum
+  (`.modal-dialog .modal-body{padding:0}`, `.modal-header{padding:0 15px}` — built for
+  modals whose content is an iframe) and its fields render side-by-side unless a
+  `form-vertical` ancestor is present (`.form-vertical .control-group{flex-direction:
+  column}`, present on the real edit form, absent from a bespoke modal). A custom modal
+  has to supply both itself.

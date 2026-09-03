@@ -7,11 +7,11 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 - The Figures list now shows a one-line summary per row (caption, source,
-  short configuration) — a drag handle, an edit (pencil) button and a delete
-  (trash) button, nothing else. Editing opens the full field set in a dialog
-  instead of an inline expand. Adding a figure has one button, in the toolbar;
-  reordering is drag only. Adding, removing and the drag mechanics themselves
-  are unchanged Joomla subform behaviour.
+  short configuration) — a drag handle, up/down buttons, an edit (pencil)
+  button and a delete (trash) button. Editing opens the full field set in a
+  dialog instead of an inline expand. Adding a figure has one button, in the
+  toolbar. Reordering, adding, removing and the drag mechanics themselves are
+  unchanged Joomla subform behaviour.
 
 ## [1.0.0] - 2026-09-03
 

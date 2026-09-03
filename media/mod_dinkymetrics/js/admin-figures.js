@@ -110,6 +110,12 @@
     }
   };
 
+  // No click handler for .group-move-up/.group-move-down here: joomla-field-subform.js
+  // already wires them up itself. Its selectors are built at runtime as
+  // `${buttonMove}-up` / `${buttonMove}-down` (see setUpDragSort() near the end of that
+  // file) rather than spelled out as literal strings, which is easy to miss on a quick
+  // read — do not "fix" this a second time.
+
   // hidden.bs.modal bubbles (Bootstrap's EventHandler.trigger defaults to bubbles: true),
   // so one delegated listener on the document covers every row, present now or added
   // later.

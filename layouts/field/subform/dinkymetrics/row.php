@@ -16,9 +16,10 @@
  *
  * The outer div keeps exactly the markup joomla-field-subform.js looks for
  * (.subform-repeatable-group, data-base-name, data-group) — that is what makes drag-to-
- * reorder and delete work without a line of extra JS here. Only .group-move (the drag
- * handle) and .group-remove (the trash button) are used; there is deliberately no
- * per-row add and no up/down buttons — see .doc/WORKPLAN.md.
+ * reorder and delete work without a line of extra JS here: .group-move is the drag
+ * handle, .group-move-up/-down the keyboard/screen-reader-reachable fallback for the
+ * same reordering, .group-remove the trash button. Deliberately no per-row add button —
+ * the one in the wrapper's toolbar is the only way to add a row — see .doc/WORKPLAN.md.
  *
  * The modal's id is set from $group ("figures0", …) here for the server-rendered rows.
  * A row cloned client-side from the hidden <template> (data-group="figuresX" in the raw
@@ -47,7 +48,7 @@ $modalId  = 'dm-modal-' . $group;
 $titleId  = $modalId . '-title';
 ?>
 <div class="subform-repeatable-group dinkymetrics-figure" data-base-name="<?php echo $basegroup; ?>" data-group="<?php echo $group; ?>">
-    <div class="dinkymetrics-figure__row">
+    <div class="dinkymetrics-figure__row border rounded bg-body-tertiary">
         <?php if (!empty($buttons['move'])) : ?>
             <button type="button" class="group-move dinkymetrics-figure__handle" aria-label="<?php echo Text::_('JGLOBAL_FIELD_MOVE'); ?>">
                 <span class="icon-arrows-alt" aria-hidden="true"></span>
@@ -55,17 +56,26 @@ $titleId  = $modalId . '-title';
         <?php endif; ?>
         <div class="dinkymetrics-figure__info">
             <span class="dinkymetrics-figure__caption"><?php echo $this->escape($summary['caption']); ?></span>
-            <span class="dinkymetrics-figure__source"><?php echo $this->escape($summary['source']); ?></span>
+            <span class="dinkymetrics-figure__source text-body-secondary"><?php echo $this->escape($summary['source']); ?></span>
             <?php if ($summary['detail'] !== '') : ?>
-                <span class="dinkymetrics-figure__detail"><?php echo $this->escape($summary['detail']); ?></span>
+                <span class="dinkymetrics-figure__detail text-body-secondary"><?php echo $this->escape($summary['detail']); ?></span>
             <?php endif; ?>
             <?php if ($linked) : ?>
-                <span class="dinkymetrics-figure__badge" title="<?php echo $this->escape(Text::_('MOD_DINKYMETRICS_FIGURE_LINK_LABEL')); ?>">
+                <span class="dinkymetrics-figure__badge text-body-secondary"
+                    title="<?php echo $this->escape(Text::_('MOD_DINKYMETRICS_FIGURE_LINK_LABEL')); ?>">
                     <span class="icon-link" aria-hidden="true"></span>
                 </span>
             <?php endif; ?>
         </div>
         <div class="dinkymetrics-figure__actions">
+            <?php if (!empty($buttons['move'])) : ?>
+                <button type="button" class="group-move-up dinkymetrics-figure__reorder" aria-label="<?php echo Text::_('JGLOBAL_FIELD_MOVE_UP'); ?>">
+                    <span class="icon-chevron-up" aria-hidden="true"></span>
+                </button>
+                <button type="button" class="group-move-down dinkymetrics-figure__reorder" aria-label="<?php echo Text::_('JGLOBAL_FIELD_MOVE_DOWN'); ?>">
+                    <span class="icon-chevron-down" aria-hidden="true"></span>
+                </button>
+            <?php endif; ?>
             <button type="button" class="dinkymetrics-figure__edit" data-bs-toggle="modal" data-bs-target="#<?php echo $modalId; ?>"
                 aria-label="<?php echo Text::_('MOD_DINKYMETRICS_FIGURE_EDIT'); ?>">
                 <span class="icon-pencil" aria-hidden="true"></span>
@@ -85,7 +95,10 @@ $titleId  = $modalId . '-title';
                     <h3 class="modal-title" id="<?php echo $titleId; ?>"><?php echo $this->escape($summary['caption']); ?></h3>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body form-vertical">
+                    <?php // form-vertical is what makes Joomla's own .control-group stack label-above-field
+                    // (".form-vertical .control-group{flex-direction:column}"); the rest of this edit
+                    // page has it on the surrounding <form>, a modal does not inherit from there. ?>
                     <?php foreach ($form->getGroup('') as $field) : ?>
                         <?php echo $field->renderField(); ?>
                     <?php endforeach; ?>

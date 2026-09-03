@@ -8,14 +8,25 @@
  *
  * Admin-only chrome for the Figures list. Unlike media/mod_dinkymetrics/css/
  * dinkymetrics.css (the public, opt-in, colourless site stylesheet), this one styles the
- * module's own edit screen, so it is free to use the admin theme's own tokens with a
- * plain fallback for template themes that don't define them. The modal itself is left
- * almost entirely to Bootstrap/Atum's own styling — it should look like any other
- * Joomla admin dialog, not like something this module invented.
+ * module's own edit screen.
+ *
+ * Colour and background come from Bootstrap's theme-aware utility classes in the markup
+ * (bg-body-tertiary, text-body-secondary, border) rather than from custom properties
+ * declared here: Atum 6's dark mode redefines Bootstrap's own de-prefixed tokens
+ * (--border-color, --body-color, --secondary-color, …) per [data-bs-theme], but does
+ * *not* redefine the classic Sass-derived ones (--dark, --gray-600, …) for dark mode, and
+ * defines no --component-bg at all — a hand-picked var() with a light-mode fallback here
+ * would silently paint a white box in dark mode. The utility classes are guaranteed to
+ * track the active theme because Atum's own chrome is built from the same classes.
  */
 
-.dinkymetrics-figure {
-    margin-block-end: 0.375rem;
+.dinkymetrics-figures .subform-repeatable-group {
+    /* Undo Atum's default 32px-padded, bordered card — sized for the stock repeatable
+       layout's stacked full-height fields, not this module's one-line row. */
+    padding: 0;
+    margin: 0 0 0.375rem;
+    border: 0;
+    background: transparent;
 }
 
 .dinkymetrics-figure__row {
@@ -23,22 +34,14 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.4rem 0.6rem;
-    border: 1px solid var(--border-color, #dee2e6);
-    border-radius: var(--border-radius, 0.25rem);
-    background: var(--component-bg, #fff);
 }
 
 .dinkymetrics-figure__handle {
     flex: 0 0 auto;
     padding: 0.25rem 0.4rem;
-    color: var(--gray-500, #adb5bd);
     background: transparent;
     border: 0;
     cursor: grab;
-}
-
-.dinkymetrics-figure__handle:hover {
-    color: var(--gray-700, #495057);
 }
 
 .dinkymetrics-figure__info {
@@ -47,36 +50,24 @@
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 0.5em;
+    gap: 0.25em 0.6em;
 }
 
 .dinkymetrics-figure__caption {
     font-weight: 600;
 }
 
-.dinkymetrics-figure__source {
-    color: var(--dark, #495057);
-}
-
-.dinkymetrics-figure__detail {
-    color: var(--gray-600, #6c757d);
-    font-size: 0.9em;
-}
-
 .dinkymetrics-figure__detail::before {
     content: '· ';
-}
-
-.dinkymetrics-figure__badge {
-    color: var(--gray-600, #6c757d);
 }
 
 .dinkymetrics-figure__actions {
     flex: 0 0 auto;
     display: flex;
-    gap: 0.25rem;
+    gap: 0.15rem;
 }
 
+.dinkymetrics-figure__reorder,
 .dinkymetrics-figure__edit,
 .dinkymetrics-figure__delete {
     display: inline-flex;
@@ -85,24 +76,34 @@
     width: 2rem;
     height: 2rem;
     padding: 0;
-    border: 1px solid transparent;
+    border: 0;
     border-radius: var(--border-radius, 0.25rem);
     background: transparent;
-    color: var(--gray-600, #6c757d);
 }
 
-.dinkymetrics-figure__edit:hover {
-    color: var(--primary, #0d6efd);
-    border-color: var(--primary, #0d6efd);
+/* A theme-neutral translucent tint rather than a var()-based colour change: it reads
+   fine against both a light and a dark background without depending on which of Atum's
+   tokens happen to be redefined for the active theme. */
+.dinkymetrics-figure__handle:hover,
+.dinkymetrics-figure__reorder:hover,
+.dinkymetrics-figure__edit:hover,
+.dinkymetrics-figure__delete:hover,
+.dinkymetrics-figure__reorder:focus-visible,
+.dinkymetrics-figure__edit:focus-visible,
+.dinkymetrics-figure__delete:focus-visible {
+    background: rgba(127, 127, 127, 0.2);
 }
 
-.dinkymetrics-figure__delete:hover {
-    color: var(--danger, #dc3545);
-    border-color: var(--danger, #dc3545);
+/* Atum zeroes .modal-dialog .modal-body's and .modal-header's own padding globally
+   (built for modals whose whole content is an iframe); every Joomla admin modal is
+   expected to bring its own. The compound selector outranks Atum's regardless of
+   stylesheet load order. */
+.modal.dinkymetrics-figure__modal .modal-header,
+.modal.dinkymetrics-figure__modal .modal-body,
+.modal.dinkymetrics-figure__modal .modal-footer {
+    padding: 1rem 1.25rem;
 }
 
-/* The modal's field labels/descriptions are otherwise identical to any other Joomla
-   admin form; only the spacing between fields needed a touch of room to breathe. */
-.dinkymetrics-figure__modal .control-group {
+.modal.dinkymetrics-figure__modal .control-group {
     margin-block-end: 1rem;
 }

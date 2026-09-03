@@ -851,6 +851,96 @@ Bearbeitung durch das Modal hindurch —, JSON vor/nach identisch. Auf Joomla
 Verhalten, keine Konsolenfehler. Volle Regression (`phpcs`, 72 Unit-Tests, 16
 Zähl-Checks, Formatierungsparität) unverändert grün.
 
+### Nachbesserung: Feinschliff auf Nutzerfeedback (Rahmen, Kontrast, Modal-Padding, Hoch/Runter)
+
+Vier gemeldete Punkte, alle auf denselben zwei Ursachen zurückgeführt statt
+einzeln kuriert.
+
+**Ursache 1 — geratene CSS-Variablen statt Bootstraps eigener Tokens.**
+`var(--component-bg, #fff)` sollte eine dezente Kartenfarbe liefern; Atum 6
+definiert `--component-bg` gar nicht, der Fallback `#fff` griff also **immer**
+und malte im Dark-Theme eine weiße Box. Die Beschriftung („Jahre") hatte keine
+eigene Textfarbe und erbte die helle Standardschrift des Dark-Themes — weißer
+Text auf weißer Fläche, unsichtbar. Was wie „die Position der Zusammenfassung
+wirkt zufällig" aussah, war genau das: der sichtbare Text begann einfach
+hinter einem unsichtbaren Wort.
+
+Nachgesehen statt weiter geraten: Atum 6 definiert unter `[data-bs-theme=dark]`
+eigene, **unpräfixierte** Bootstrap-5.3-Variablen (`--border-color`,
+`--body-color`, `--secondary-color`, `--tertiary-bg` …) und daneben, nur fürs
+**Light**-Theme, die klassischen Sass-Namen (`--dark`, `--gray-600`, `--primary`
+…) — letztere werden fürs Dark-Theme **nicht** neu gesetzt und behalten dort
+ihren hellen … nein, dunklen Light-Mode-Wert bei, was zufällig lesbar blieb,
+aber nicht dem Grundproblem half. Behoben durch Umstieg auf Bootstraps eigene,
+theme-fähige **Utility-Klassen** im Markup (`bg-body-tertiary`,
+`text-body-secondary`, `border`) statt eigener `var()`-Deklarationen — Atums
+Chrome besteht selbst aus genau diesen Klassen, sie sind also garantiert
+korrekt an beide Themes gebunden. Für die Hover-Zustände der Buttons ein
+neutrales, theme-unabhängiges `rgba(127,127,127,.2)` statt einer weiteren
+Variable.
+
+**Ursache 2 — der doppelte Rahmen kam tatsächlich von Joomla.** Der äußere
+`.subform-repeatable-group`-Container trägt in Atum eigenes Padding
+(`32px 32px 16px 28px`) und einen eigenen Rahmen — zugeschnitten auf das
+ursprüngliche mehrzeilige Repeatable-Layout, nicht auf eine einzeilige
+Zusammenfassung. Mit
+`.dinkymetrics-figures .subform-repeatable-group { padding:0; border:0;
+background:transparent; }` verschwindet die äußere Box vollständig; übrig
+bleibt nur die eine, selbst gestaltete Zeile.
+
+**Modal-Padding — zwei generische Atum-Regeln, für Iframe-Inhalte gedacht.**
+`.modal-dialog .modal-body{padding:0}` und `.modal-header{padding:0 15px}`
+gelten unbedingt für **jedes** Bootstrap-Modal im Joomla-Admin — offenbar in
+der Annahme, der Inhalt sei meist ein Iframe (Medien-Manager u. Ä.), das kein
+zusätzliches Innenpolster braucht. Jedes Modal mit echtem Formularinhalt muss
+sein Padding selbst mitbringen; ein zusammengesetzter Selektor
+(`.modal.dinkymetrics-figure__modal .modal-header/-body/-footer`) übersteuert
+das zuverlässig unabhängig von der Ladereihenfolge der Stylesheets.
+
+**Zweite, damit zusammenhängende Modal-Falle:** Joomlas
+`.control-group`-Feldlayout steht standardmäßig **nebeneinander**
+(Label/Feld als Flex-Row) und wird erst durch die Klasse `form-vertical` auf
+einem Vorfahren zu einem **gestapelten** Layout
+(`.form-vertical .control-group{flex-direction:column}`). Das umgebende
+Bearbeitungsformular trägt diese Klasse, ein neu eingefügtes Modal erbt sie
+nicht. Ohne sie standen Label und Eingabefeld nebeneinander und sprengten bei
+schmalem Modal (`modal-lg` greift erst ab 992px Viewportbreite; darunter
+bestimmt Bootstraps Fallback-Breite die Dialogbreite) die verfügbare Breite —
+das Eingabefeld landete sichtbar außerhalb des Modals. Ein `form-vertical`
+auf dem `.modal-body`-Wrapper behebt es, mit demselben Verhalten wie im Rest
+der Admin-Oberfläche.
+
+**Hoch/Runter-Buttons: erst zurückgebaut, dann selbst nachimplementiert, dann
+wieder verworfen — weil die erste Schlussfolgerung falsch war.** Ein
+erschöpfender Grep über die komplette `joomla-field-subform.js` (608 Zeilen)
+nach den Literalen `"group-move-up"`/`"group-move-down"`/`"moveUp"` lieferte
+**keinen** Treffer — daraus fälschlich geschlossen, die Buttons aus Joomlas
+eigenem `section.php` seien seit einem JS-Rewrite funktionslose Alt-Markup.
+Selbst eine Klick-Weiterleitung geschrieben (`admin-figures.js`, DOM-Swap
+via `insertBefore`, exakt nach dem Vorbild von `setUpDragSort()`), verifiziert,
+dass sie einzeln funktioniert — und erst bei genauerem Hinsehen bemerkt, dass
+ein Klick die Zeile **zwei** Positionen statt einer verschob. Ursache: die
+Selektoren werden in `joomla-field-subform.js` **zur Laufzeit
+zusammengesetzt** (`` `${buttonMove}-up` ``, `` `${buttonMove}-down` `` in
+`setUpDragSort()`, ganz am Ende der Datei) statt als Literal-String zu
+erscheinen — mein Grep konnte sie deshalb nicht finden, obwohl die Verdrahtung
+längst da war. Meine eigene Logik lief parallel zu Joomlas eigener und
+verdoppelte jede Bewegung. Die eigene Implementierung wieder entfernt;
+Joomlas native Verdrahtung übernimmt Hoch/Runter vollständig, inklusive eines
+sinnvollen Wrap-Arounds an den Rändern (erste Zeile hoch → wird letzte, und
+umgekehrt), verifiziert durch wiederholtes Klicken und Prüfen der
+resultierenden Reihenfolge. **Lehre:** ein Grep, der nichts findet, beweist
+bei dynamisch zusammengesetzten Selektoren gar nichts — ausprobieren schlägt
+Lesen, sobald beides möglich ist.
+
+**Verifiziert:** Beschriftung, Quelle und Kurzfassung jetzt in beiden Themes
+lesbar; nur noch ein Rahmen pro Zeile; Modal-Felder mit Innenabstand und
+gestapeltem Label/Feld-Layout; Hoch/Runter bewegt exakt eine Position (bzw.
+wrapt an den Rändern), Speicher-Roundtrip über mehrere Zwischenschritte
+(Verschieben, Zurückverschieben, Speichern) liefert identisches JSON. Volle
+Regression grün, erneut auf Joomla 6.1.3 per Upgrade-Installation aus dem
+frisch gebauten Paket bestätigt.
+
 ---
 
 ## v1.1+ (nicht jetzt)
