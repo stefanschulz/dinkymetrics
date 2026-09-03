@@ -1,0 +1,26 @@
+{
+  "$schema": "https://developer.joomla.org/schemas/json-schema/web_assets.json",
+  "name": "mod_dinkymetrics",
+  "version": "1.0.0",
+  "description": "DinkyMetrics — key figures with an optional count-up animation.",
+  "license": "GPL-3.0-or-later",
+  "assets": [
+    {
+      "name": "mod_dinkymetrics.style",
+      "description": "Opt-in base layout. A site is free to disable this asset and style the markup itself.",
+      "type": "style",
+      "uri": "mod_dinkymetrics/dinkymetrics.css",
+      "version": "auto"
+    },
+    {
+      "name": "mod_dinkymetrics.script",
+      "description": "The count-up animation. Only loaded when a module instance asks for it.",
+      "type": "script",
+      "uri": "mod_dinkymetrics/dinkymetrics.js",
+      "version": "auto",
+      "attributes": {
+        "type": "module"
+      }
+    }
+  ]
+}

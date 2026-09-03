@@ -1,0 +1,57 @@
+/**
+ * @package     TheLoom.Module
+ * @subpackage  Site.DinkyMetrics
+ *
+ * @copyright   Copyright (C) 2026 The Loom / Stefan Schulz. All rights reserved.
+ * @license     GNU General Public License version 3 or later; see LICENSE.txt
+ * @link        https://www.the-loom.de
+ *
+ * Opt-in base layout: a row of centred figures and nothing else.
+ *
+ * No colours, no font sizes, no spacing scale — those belong to the site. Everything is
+ * scoped under .mod-dinkymetrics, because template rules like Cassiopeia's
+ * `.com-content-article ul { overflow: hidden }` outrank a bare element selector.
+ *
+ * A site that would rather style the markup itself can drop this file entirely:
+ *
+ *   $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
+ *   $wa->disableStyle('mod_dinkymetrics.style');
+ */
+
+.mod-dinkymetrics .mod-dinkymetrics__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem 2.5rem;
+    align-items: flex-start;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.mod-dinkymetrics .mod-dinkymetrics__item {
+    text-align: center;
+}
+
+.mod-dinkymetrics .mod-dinkymetrics__value {
+    display: block;
+    /* Tabular figures keep the number from jittering while it counts up. A site that
+       wants a fixed width during the animation adds min-width here in its own CSS. */
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+.mod-dinkymetrics .mod-dinkymetrics__label {
+    display: block;
+    margin-block-start: 0.25em;
+}
+
+.mod-dinkymetrics .mod-dinkymetrics__link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.mod-dinkymetrics .mod-dinkymetrics__link:hover,
+.mod-dinkymetrics .mod-dinkymetrics__link:focus-visible {
+    text-decoration: underline;
+}
