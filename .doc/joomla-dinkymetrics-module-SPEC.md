@@ -1,5 +1,12 @@
 # Pflichtenheft — `mod_keyfigures`
 
+> **Status:** Ausgangspunkt der Umsetzung, nicht mehr in jedem Punkt aktuell.
+> `mod_keyfigures` war der Arbeitstitel, das Modul heißt `mod_dinkymetrics`.
+> Verbindlich für den tatsächlichen Stand ist [WORKPLAN.md](WORKPLAN.md) — dort
+> stehen alle bewussten Abweichungen von diesem Dokument mit Begründung
+> (Abschnitte „Entscheidungen" bzw. „Entschieden & gelernt" je Slice), sowie die
+> technische Referenz [ARCHITECTURE.md](ARCHITECTURE.md).
+
 Ein kleines, **generisches** Joomla-Site-Modul, das eine Reihe von
 Kennzahlen (Zahl + Beschriftung) ausgibt — Werte wahlweise fest
 eingetragen oder aus dem Inhaltsbestand errechnet — mit optionaler

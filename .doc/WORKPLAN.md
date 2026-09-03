@@ -1,7 +1,8 @@
 # DinkyMetrics — Arbeitsplan
 
-Basis: [mod_keyfigurespflichtenheft.md](mod_keyfigurespflichtenheft.md) (Arbeitstitel
-dort `mod_keyfigures` — wird durchgängig zu `mod_dinkymetrics`).
+Basis: [joomla-dinkymetrics-module-SPEC.md](joomla-dinkymetrics-module-SPEC.md)
+(Arbeitstitel dort `mod_keyfigures` — wird durchgängig zu `mod_dinkymetrics`).
+Dieses Dokument hier ist die verbindliche Fassung, wo es von der Spec abweicht.
 
 Konventionsreferenz: `P:\dev\dinkytags` (`plg_system_dinkytags`) und
 `P:\dev\dinkygallery` (`plg_content_dinkygallery`). Übernommen werden Repo-Layout,

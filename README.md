@@ -192,6 +192,7 @@ A disposable Joomla stack for testing lives in `.docker/` — see `.docker/READM
 
 ## Documentation
 
-- `.doc/mod_keyfigurespflichtenheft.md` — the specification
+- `.doc/joomla-dinkymetrics-module-SPEC.md` — the original specification (partly
+  superseded — see WORKPLAN.md for what actually shipped)
 - `.doc/WORKPLAN.md` — phased build record, decisions and the traps found along the way
 - `.doc/ARCHITECTURE.md` — how the pieces fit together

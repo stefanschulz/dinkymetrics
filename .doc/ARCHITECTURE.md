@@ -14,9 +14,11 @@ with a caption each — and optionally counts them up when they scroll into view
 typed in or counted from `#__content` / `#__categories`.
 
 No database tables, no admin views, no AJAX. Two media assets (one CSS file, one ES
-module), no third-party JavaScript. Everything is driven by module parameters. The brief is
-in [mod_keyfigurespflichtenheft.md](mod_keyfigurespflichtenheft.md); the phased build
-record, including every decision and trap, is in [WORKPLAN.md](WORKPLAN.md).
+module), no third-party JavaScript. Everything is driven by module parameters. The
+original brief is in
+[joomla-dinkymetrics-module-SPEC.md](joomla-dinkymetrics-module-SPEC.md) — partly
+superseded, see its status note; the phased build record, including every decision
+and trap, is in [WORKPLAN.md](WORKPLAN.md).
 
 ---
 
