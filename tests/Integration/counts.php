@@ -140,6 +140,26 @@ $check(
     '611, 612, 618, 619 — the grandchild category is not included'
 );
 
+// QA §13.10: on a multilingual site the language filter must apply IN ADDITION to
+// everything else, not replace it — same category, same status/access, only the
+// language argument changes. 618 is tagged de-DE only, 619 is tagged en-GB only; 611
+// and 612 are '*' and count under either. A wrong filter (AND instead of IN, or the
+// two swapped) would still land on some number here, so the two languages are checked
+// against DIFFERENT expected sets, not just "the count changed".
+$check(
+    'category 602 only, published, language en-GB',
+    3,
+    $counter->articles(602, false, 'published', 'any', $guest, 'en-GB', $now),
+    '611, 612 (language "*") and 619 (en-GB); 618 (de-DE only) drops out'
+);
+
+$check(
+    'category 602 only, published, language de-DE',
+    3,
+    $counter->articles(602, false, 'published', 'any', $guest, 'de-DE', $now),
+    '611, 612 (language "*") and 618 (de-DE); 619 (en-GB only) drops out'
+);
+
 $check(
     'category 602 only, any status',
     8,

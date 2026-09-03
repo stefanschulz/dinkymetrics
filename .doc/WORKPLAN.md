@@ -652,11 +652,11 @@ Joomla-5-Stack, gleiche neun Kennzahlen, gleiche Werte, CSS und JS geladen.
 | 7 | `prefers-reduced-motion` | **ok** (Slice 5) |
 | 8 | Präfix/Suffix server- wie clientseitig, `aria-label` | **ok** |
 | 9 | Verlinkte Kennzahl intern und extern | **ok** — intern über `Route::_()`, extern mit `rel="noopener noreferrer"`, `mailto:` erlaubt, `javascript:` und Nicht-URLs erzeugen **keinen** Link |
-| 10 | Zahlenformat folgt `format_locale` | **ok** — leer → `1,234.5`, `de-DE` → `1.234,5`, `fr-FR` → `1 234,5`. Der Mehrsprachigkeits-Teil (Sprache + `*`) ist auf dieser einsprachigen Instanz nicht prüfbar |
+| 10 | Zahlenformat folgt `format_locale`; `content_count` zählt Sprache + `*` | **ok** — Zahlenformat: leer → `1,234.5`, `de-DE` → `1.234,5`, `fr-FR` → `1 234,5`. Sprachfilter: gezielt an `Counter::articles()` geprüft statt eine mehrsprachige Instanz aufzusetzen — Kategorie 602, `language=en-GB` → 3 (611, 612 „*", 619; 618 fällt raus), `language=de-DE` → 3 (611, 612, 618; 619 fällt raus). Zwei verschiedene Sollmengen, nicht nur eine andere Zahl — belegt, dass genau die richtigen Artikel je Sprache ein-/ausgeschlossen werden (`tests/Integration/counts.php`) |
 | 11 | Modul-Cache | **ok** (Slice 3: kalt 3 Queries, warm 0) |
 | 12 | Zwei Instanzen mit verschiedenen Parametern | **ok** |
 | 13 | Template-Override greift | **ok** — beide Instanzen nutzen ihn, Originalmarkup verschwindet |
-| 14 | RTL | **teilweise** — das CSS enthält keine physischen Richtungsangaben (nur `margin-inline`, `gap`, Flex); das Kippen selbst braucht eine RTL-Seite |
+| 14 | RTL | **ok** — Testseite mit dem echten `dinkymetrics.css` unter `dir="rtl"` gerendert (keine echte RTL-Joomla-Installation nötig, da RTL eine reine CSS-Eigenschaft ist): die Flex-Reihe kehrt sich korrekt um (erste Kennzahl steht jetzt rechts, x-Positionen exakt gespiegelt), Präfix/Zahl/Suffix bleiben in der richtigen Lesefolge. Das CSS hat ohnehin nur eine einzige logische Eigenschaft (`margin-block-start`, richtungsunabhängig) und ansonsten nur zentrierte/symmetrische Regeln |
 | 15 | Opt-in-CSS abwählbar | **ok**, aber anders als dokumentiert (s. u.) |
 
 ### Was die Abnahme korrigiert hat
@@ -686,25 +686,51 @@ Joomla-5-Stack, gleiche neun Kennzahlen, gleiche Werte, CSS und JS geladen.
   Beide Setup-Skripte übergeben `cache/`, `administrator/cache/` und `tmp/` jetzt an
   www-data.
 
-### Weiterhin offen
+### Cache-Trennung nach Zugriffsebene — abgeschlossen (2026-09-04)
 
-- **QA 5, zweite Hälfte**: Dass beim Zurück- und erneuten Hineinscrollen *nicht noch
-  einmal* gezählt wird, ist im Browser noch zu bestätigen. Die Idempotenz-Sperre
-  (`dataset.done`) ist in Slice 5 mit kontrollierter Uhr geprüft — ein zweiter
-  Durchlauf reiht null Frames ein —, der Observer-Pfad dorthin aber nicht.
-- **Cache-Trennung nach Zugriffsebene**: Der Schlüssel enthält die View-Levels,
-  verifiziert bisher nur durch Lesen des Codes.
-  **Die richtige Kennzahl dafür ist „Beitraege" in Instanz 900**, nicht die
-  Kategorie-Kennzahl: `category_count` wendet die Zugriffsebenen nur auf die
-  `skip_empty`-Unterabfrage an und ist deshalb für alle gleich. Ablauf: globales
-  Caching an, Modulparameter *Caching* auf *Use Global* (beides im Stack gesetzt),
-  abgemeldet steht 8.0; nach Anmeldung als `admin` (Gruppe *Super Users*, die in
-  Zugriffsebene *Registered* explizit geführt wird) muss 9.0 stehen, weil Artikel
-  617 dann mitzählt. Bleibt es bei 8.0, hat der Cache die Gästezahl durchgereicht.
-  *(Die erste Fassung dieser Anweisung nannte eine Kennzahl, die es in den Fixtures
-  gar nicht gibt — aus der Sollwert-Tabelle zitiert statt aus den Modulparametern.)*
-- **QA 10, mehrsprachiger Teil** und **QA 14 (RTL-Seite)** brauchen jeweils eine
-  entsprechend konfigurierte Installation.
+Letzter offener QA-Punkt aus Slice 7. Ablauf: globales Caching an, Modulparameter
+*Caching* auf *Use Global* (beides bereits im Stack gesetzt), abgemeldet zeigt
+„Beitraege" (Instanz 900) **8.0**. Nach Anmeldung **im Frontend** als `admin`
+(Gruppe *Super Users*, die in Zugriffsebene *Registered* explizit geführt wird)
+zeigt dieselbe Kennzahl **9.0** — Artikel 617 zählt jetzt mit. Beide Werte danach
+noch einmal wechselseitig gegengeprüft (abgemeldeter `curl`-Aufruf weiterhin 8.0,
+angemeldete Browser-Ansicht weiterhin 9.0): zwei getrennte Cache-Einträge, keiner
+überschreibt den anderen.
+
+*(Admin- und Site-Sitzung sind bei Joomla getrennt — die frühere
+Backend-Anmeldung galt fürs Frontend nicht, dafür war eine zweite, kurze
+Anmeldung nötig. Die erste Fassung dieser Anweisung hatte zudem die falsche
+Kennzahl genannt: `category_count` wendet die Zugriffsebenen nur auf die
+`skip_empty`-Unterabfrage an und ist deshalb für alle Betrachter gleich —
+„Beitraege" [`content_count`] ist die einzige Kennzahl in den Fixtures, die
+sich mit der Anmeldung ändert.)*
+
+### QA 10 (Mehrsprachigkeit) und QA 14 (RTL) — abgeschlossen ohne eigene Installation
+
+Beides ließ sich präziser und ohne eine zweite Sprache/RTL-Installation
+aufzusetzen direkt prüfen:
+
+- **Sprachfilter:** zwei neue Fälle in `tests/Integration/counts.php`, die
+  `Counter::articles()` direkt mit `language='en-GB'` bzw. `'de-DE'` aufrufen.
+  Kategorie 602, Status „published": mit `en-GB` zählen 611, 612 (Sprache „*")
+  und 619 (en-GB), 618 (de-DE) fällt raus → 3; mit `de-DE` genau umgekehrt,
+  ebenfalls 3. Zwei **verschiedene** Sollmengen bei gleicher Summe — das belegt,
+  dass tatsächlich die richtigen Artikel je Sprache aus- bzw. eingeschlossen
+  werden, nicht nur, dass sich irgendeine Zahl ändert. Damit 18/18 Checks statt
+  16/16.
+- **RTL:** eine winzige statische Testseite mit dem echten, unveränderten
+  `dinkymetrics.css` und dem echten Markup, einmal mit `dir="ltr"`, einmal mit
+  `dir="rtl"` gerendert. Ergebnis: die Flex-Reihe kehrt sich korrekt um (erste
+  Kennzahl steht unter RTL rechts statt links, alle drei Positionen exakt
+  gespiegelt gemessen), Präfix/Zahl/Suffix bleiben in der richtigen Lesefolge.
+  Nachvollziehbar, weil das CSS ohnehin nur eine einzige logische Eigenschaft
+  (`margin-block-start`) sowie zentrierte/symmetrische Regeln enthält — echtes
+  Kippen war also gar keine RTL-spezifische Eigenleistung des Moduls, sondern
+  eine Bestätigung, dass keine versteckte physische Richtungsangabe
+  (`margin-left` o. Ä.) das Zentrieren durchkreuzt.
+
+Damit sind alle Positionen aus §13 der Spezifikation sowie die drei
+Nachzügler aus der Abnahme (Slice 7) abgeschlossen.
 
 ---
 

@@ -154,6 +154,8 @@ INSERT IGNORE INTO jos_modules_menu (moduleid, menuid) VALUES (900, 0), (901, 0)
 --                                                         status, so 615 and 616 count)
 --   content_count  cat 606, published             -> 0   (E2: the category is unpublished)
 --   content_count  cat 606, state=any             -> 1
+--   content_count  cat 602, published, language en-GB -> 3   (611, 612, 619; 618 is de-DE only)
+--   content_count  cat 602, published, language de-DE -> 3   (611, 612, 618; 619 is en-GB only)
 --
 --   category_count parent 601, all levels, any status            -> 5   (606 joins in)
 --   category_count parent 602, direct children, published        -> 1   (603)
