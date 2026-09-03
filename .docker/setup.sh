@@ -42,10 +42,14 @@ J '
   ln -s /repo/tmpl                 mod_dinkymetrics/tmpl
   ln -s /repo/language             mod_dinkymetrics/language
   chown -h www-data:www-data mod_dinkymetrics mod_dinkymetrics/*
-  # src/ and the media assets arrive in later slices; link them once they exist.
+  # src/ and layouts/ arrive in later slices; link them once they exist.
   if [ -d /repo/src ]; then
     ln -s /repo/src mod_dinkymetrics/src
     chown -h www-data:www-data mod_dinkymetrics/src
+  fi
+  if [ -d /repo/layouts ]; then
+    ln -s /repo/layouts mod_dinkymetrics/layouts
+    chown -h www-data:www-data mod_dinkymetrics/layouts
   fi
   cd /var/www/html/media
   rm -rf mod_dinkymetrics

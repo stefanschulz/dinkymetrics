@@ -22,8 +22,13 @@ module under **Content → Site Modules** and give it a position.
 
 ## Figures
 
-Each row of the **Figures** list is one number on the page. A row needs a caption and a
-source; the rest of the fields depend on which source is chosen.
+Each row of the **Figures** list is one number on the page. A row shows as a single
+summary line — caption, source, a short recap of its configuration — until expanded;
+click it to edit. Reordering, adding and removing rows, including drag-to-reorder, work
+the same as on any other Joomla list of repeatable fields.
+
+A row needs a caption and a source; the rest of the fields depend on which source is
+chosen.
 
 | Source | What it counts |
 |---|---|

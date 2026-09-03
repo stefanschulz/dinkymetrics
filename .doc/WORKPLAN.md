@@ -708,6 +708,90 @@ Joomla-5-Stack, gleiche neun Kennzahlen, gleiche Werte, CSS und JS geladen.
 
 ---
 
+## Custom subform layout (Variante B, nachträglich)
+
+Nach der Abnahme umgesetzt, auf Nutzerwunsch: Variante A (`subform.repeatable`,
+Section-Layout statt Tabelle) macht das Formular benutzbar, zeigt pro Zeile aber
+weiterhin alle 16 Rohfelder. Variante B ersetzt das durch eine Übersicht — pro
+Zeile eine Zusammenfassungszeile (Beschriftung, Quelle, Kurzfassung der
+Konfiguration), aufklappbar für die Details. Umfang laut Absprache: Zusammenfassung
+mit Beschriftung/Quelle/Kurzfassung, aufklappbar, Drag-and-Drop für die
+Reihenfolge (Joomlas Bordmittel).
+
+**Vorher geklärt, weil sonst Fehlinvestition drohte:**
+
+- **Eigener Feldtyp ohne `field/`-Ordner.** Ein Modul kann eigene Feldtypen
+  registrieren, ohne der klassischen `field/`-Konvention zu folgen (die einen
+  nicht-namespaced `JFormField<Typ>` verlangt): das Manifest trägt
+  `addfieldprefix="TheLoom\Module\DinkyMetrics\Site\Field"` auf `<config>`,
+  Joomla registriert das (`Form::syncPaths()`, ausgelöst beim Laden des
+  Formulars) und sucht für `type="dinkyfigures"` dann nach
+  `TheLoom\Module\DinkyMetrics\Site\Field\DinkyfiguresField` — über die
+  ohnehin vorhandene PSR-4-Namespace-Map, kein separater Ladepfad nötig.
+- **Eigenes Layout ohne Eingriff in `JPATH_ROOT/layouts`.** `FormField::getRenderer()`
+  übergibt die Include-Pfade aus `getLayoutPaths()` an den `FileLayout`-Renderer,
+  und `FileLayout::sublayout()` reicht dieselben Pfade an Unter-Layouts weiter
+  (`$sublayout->includePaths = $this->includePaths`). Ein überschriebenes
+  `getLayoutPaths()`, das den eigenen `layouts/`-Ordner des Moduls einschiebt
+  (vor dem globalen Fallback, aber hinter einem Admin-Template-Override), reicht
+  also für die komplette Layout-Kette. Layout-IDs sind reine Pfad-Segmente
+  (Punkt → Slash), keine Joomla-Konvention à la `com_x.y` nötig.
+- **Drag-and-Drop ist bereits eingebaut, nichts Eigenes nötig.** Joomlas
+  `joomla-field-subform`-Webkomponente verdrahtet den `.group-move`-Button
+  bereits mit echtem HTML5-Drag (kein Sortable.js, keine Fremdbibliothek) plus
+  Hoch/Runter-Buttons als Fallback — vorausgesetzt, die Buttons tragen exakt
+  diese Klassen und der äußere Zeilen-Wrapper trägt `.subform-repeatable-group`
+  mit `data-base-name`/`data-group`. Das eigene Layout übernimmt diese Klassen
+  unverändert; Hinzufügen/Entfernen/Umsortieren sind dadurch unverändertes
+  Core-Verhalten.
+
+**Umsetzung:**
+
+- `src/Field/DinkyfiguresField.php` — dünne `SubformField`-Unterklasse, nur
+  `getLayoutPaths()` überschrieben.
+- `src/Field/FigureSummary.php` — baut die Kurzfassung serverseitig aus dem
+  Zeilen-`Form` (`Form::getValue()`, öffentlich). Enum-Texte (Quelle, Status,
+  Einheit, Erweiterung) sind als kleine Label-Tabellen gespiegelt statt aus dem
+  Formularfeld reflektiert — `ListField::getOptions()` ist `protected`, und das
+  Spiegeln ist dasselbe Muster, das `DinkyMetricsHelper::oneOf()` schon für
+  dieselben Werte nutzt. Kategorietitel kommen über eine direkte, gecachte
+  DB-Abfrage, nicht aus dem (dashindentierten) Options-Text.
+- `layouts/field/subform/dinkymetrics.php` + `.../dinkymetrics/row.php` — Wrapper
+  bzw. Zeile. Zeile: `<summary>` mit Zusammenfassung, `<details>` fürs Aufklappen
+  (natives HTML, kein ARIA-Aufwand), Move/Remove/Add-Buttons als Geschwister
+  außerhalb des `<details>` — reorderbar/löschbar, ohne aufzuklappen.
+- `media/mod_dinkymetrics/{css,js}/admin-figures.*` — eigenes Backend-Asset-Paar
+  (`mod_dinkymetrics.admin-figures`), unabhängig vom Site-Stylesheet (das bleibt
+  farblos/frontend-only; im Backend ist eigenes Styling unproblematisch).
+  Das JS hält die Zusammenfassung nach einer Bearbeitung aktuell: ein
+  `toggle`-Listener (Capture-Phase, weil das native `toggle`-Event nicht
+  bubbelt) liest beim Zuklappen die aktuell sichtbaren Feldwerte aus dem DOM und
+  schreibt sie in die Zusammenfassung — bewusst nur bei Zuklappen, nicht bei
+  jedem Tastendruck, und bewusst nur Beschriftung/Quelle/Kategorie (die drei
+  Angaben, die eine Zusammenfassung am stärksten prägen); die volle Kurzfassung
+  mit allen Filtern ist nach dem nächsten Speichern wieder exakt.
+
+**Verifiziert:** `phpcs` sauber, alle 72 Unit-Tests, alle 16 Zähl-Checks und die
+Formatierungsparität weiterhin grün — nichts an der Auflösungslogik ist berührt.
+Speicher-Roundtrip geprüft (sechs Zeilen, JSON vor/nach identisch). Neue Zeile
+startet aufgeklappt, bestehende eingeklappt; Zuklappen nach Bearbeitung
+aktualisiert die Zusammenfassung live. Auf Joomla 6.1.3 aus dem gebauten ZIP
+installiert (Upgrade über die bestehende Installation) — identisches Verhalten,
+keine Konsolenfehler, `layouts/` und die neuen `media/`-Dateien landen kopiert
+(nicht symlinkt) exakt dort, wo das Manifest sie hinschickt.
+
+**Aus Sicherheitsgründen nicht selbst behoben:** ein `TypeError` beim ersten
+Testlauf war ein Fehler in meinem eigenen Spike-Code (`_JEXEC`-Wächterzeile vor
+der `namespace`-Deklaration — PHP verbietet das kategorisch); danach eine 500 im
+Browser, ebenfalls Folge desselben Tippfehlers, behoben mit derselben Korrektur.
+
+**Offen für später:** die JS-Kurzfassung bildet nur `content_count`/
+`category_count`s Kategorie ab, nicht Status/Featured/`skip_empty` — bewusst
+knapp gehalten (s. o.); bei Bedarf ließe sich das erweitern, sobald klar ist, ob
+die volle Detailtreue während der Bearbeitung tatsächlich gebraucht wird.
+
+---
+
 ## v1.1+ (nicht jetzt)
 
 Weitere Quellen über `resolve()` (`#__users`, `#__contact_details`, Tags,

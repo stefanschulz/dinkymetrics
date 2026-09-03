@@ -22,6 +22,7 @@
         <folder>src</folder>
         <folder>tmpl</folder>
         <folder>language</folder>
+        <folder>layouts</folder>
     </files>
 
     <!-- css/ and js/ must be their own folders: files placed flat here are dropped silently. -->
@@ -31,15 +32,23 @@
         <filename>joomla.asset.json</filename>
     </media>
 
-    <config>
+    <config addfieldprefix="TheLoom\Module\DinkyMetrics\Site\Field">
         <fields name="params">
 
             <fieldset name="basic">
 
+                <!--
+                    type="dinkyfigures" (TheLoom\Module\DinkyMetrics\Site\Field\DinkyfiguresField,
+                    registered via the addfieldprefix on <config> above) is a thin SubformField
+                    subclass: same data, same add/remove/move-drag JS, only its own layout under
+                    layouts/field/subform/dinkymetrics — a collapsed one-line summary per row
+                    (caption, source, short config) instead of every field spelled out. See
+                    .doc/WORKPLAN.md, "custom subform layout".
+                -->
                 <field name="figures"
-                       type="subform"
+                       type="dinkyfigures"
                        multiple="true"
-                       layout="joomla.form.field.subform.repeatable"
+                       layout="field.subform.dinkymetrics"
                        label="MOD_DINKYMETRICS_PARAM_FIGURES_LABEL"
                        description="MOD_DINKYMETRICS_PARAM_FIGURES_DESC">
 

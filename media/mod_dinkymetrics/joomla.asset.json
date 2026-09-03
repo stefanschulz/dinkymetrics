@@ -21,6 +21,20 @@
       "attributes": {
         "type": "module"
       }
+    },
+    {
+      "name": "mod_dinkymetrics.admin-figures",
+      "description": "Admin-only: layout for the collapsed Figures subform rows.",
+      "type": "style",
+      "uri": "mod_dinkymetrics/admin-figures.css",
+      "version": "auto"
+    },
+    {
+      "name": "mod_dinkymetrics.admin-figures",
+      "description": "Admin-only: keeps a collapsed row's summary in step with what was just edited.",
+      "type": "script",
+      "uri": "mod_dinkymetrics/admin-figures.js",
+      "version": "auto"
     }
   ]
 }

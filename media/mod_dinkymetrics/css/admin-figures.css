@@ -1,0 +1,77 @@
+/**
+ * @package     TheLoom.Module
+ * @subpackage  Site.DinkyMetrics
+ *
+ * @copyright   Copyright (C) 2026 The Loom / Stefan Schulz. All rights reserved.
+ * @license     GNU General Public License version 3 or later; see LICENSE.txt
+ * @link        https://www.the-loom.de
+ *
+ * Admin-only chrome for the collapsed Figures rows. Unlike media/mod_dinkymetrics/css/
+ * dinkymetrics.css (the public, opt-in, colourless site stylesheet), this one styles the
+ * module's own edit screen, so it is free to use the admin theme's own tokens with a
+ * plain fallback for template themes that don't define them.
+ */
+
+.dinkymetrics-figure {
+    margin-block-end: 0.5rem;
+}
+
+.dinkymetrics-figure__row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.dinkymetrics-figure__details {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: var(--border-radius, 0.25rem);
+    background: var(--component-bg, #fff);
+}
+
+.dinkymetrics-figure__summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5em;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    list-style: revert; /* keep the native disclosure triangle even under resets */
+}
+
+.dinkymetrics-figure__caption {
+    font-weight: 600;
+}
+
+.dinkymetrics-figure__source {
+    color: var(--dark, #495057);
+}
+
+.dinkymetrics-figure__detail {
+    color: var(--gray-600, #6c757d);
+    font-size: 0.9em;
+}
+
+.dinkymetrics-figure__detail::before {
+    content: '· ';
+}
+
+.dinkymetrics-figure__badge {
+    margin-inline-start: auto;
+    color: var(--gray-600, #6c757d);
+}
+
+.dinkymetrics-figure__body {
+    padding: 0 0.75rem 0.75rem;
+    border-top: 1px solid var(--border-color, #dee2e6);
+    padding-block-start: 0.75rem;
+}
+
+.dinkymetrics-figure__toolbar {
+    flex: 0 0 auto;
+}
+
+.dinkymetrics-figure__toolbar .btn-group {
+    flex-wrap: wrap;
+}

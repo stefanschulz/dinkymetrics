@@ -30,16 +30,22 @@ dinkymetrics/
 ├── services/provider.php             # DI: ModuleDispatcherFactory + HelperFactory + Module
 ├── src/
 │   ├── Dispatcher/Dispatcher.php     # Resolves figures through the module cache, builds the cache key
+│   ├── Field/
+│   │   ├── DinkyfiguresField.php     # SubformField subclass; ships its own layout (see layouts/ below)
+│   │   └── FigureSummary.php         # Builds the one-line row summary for the admin edit screen
 │   └── Helper/
 │       ├── DinkyMetricsHelper.php    # getFigures() orchestration, resolve() switch, link validation, logging
 │       ├── Counter.php               # The two COUNT(*) queries — nested sets, dates, access, featured
 │       ├── Formatter.php             # Number → string, ICU with a no-intl fallback (pure)
 │       └── Elapsed.php               # Date parsing and whole-unit differences (pure)
+├── layouts/field/subform/
+│   ├── dinkymetrics.php              # Figures subform wrapper (admin edit screen only)
+│   └── dinkymetrics/row.php          # One row: collapsed summary, <details> for the full fields
 ├── tmpl/default.php                  # The markup contract; overridable per template
 ├── media/mod_dinkymetrics/
-│   ├── joomla.asset.json             # Declares mod_dinkymetrics.style / .script
-│   ├── css/dinkymetrics.css          # Opt-in flex row, no colours
-│   └── js/dinkymetrics.js            # ES module: the count-up
+│   ├── joomla.asset.json             # Declares mod_dinkymetrics.{style,script,admin-figures}
+│   ├── css/{dinkymetrics,admin-figures}.css   # Site (opt-in, no colours) / admin edit screen
+│   └── js/{dinkymetrics,admin-figures}.js     # The count-up / keeps a collapsed row's summary in step
 ├── language/{en-GB,de-DE}/           # mod_dinkymetrics.ini (+ .sys.ini)
 ├── tests/
 │   ├── Unit/                         # Formatter + Elapsed, no Joomla needed
@@ -132,3 +138,13 @@ Recorded so they cost nobody time twice. The full accounts are in the workplan.
   the browser; the date is a text field with a pattern for that reason.
 - **A `requestAnimationFrame` timestamp can predate the tween's start time**, so the
   progress has to be clamped at both ends or the first frame flashes a negative number.
+- **A custom form field type needs no `field/` folder.** Set `addfieldprefix` on
+  `<config>` in the manifest to the field class's namespace; Joomla finds
+  `<prefix>\<Ucfirst(type)>Field` through the extension's own PSR-4 map. A field that
+  ships its own layout only needs to override `getLayoutPaths()` (prepend the module's
+  `layouts/` folder) — `FileLayout::sublayout()` passes the same include paths down to
+  sub-layouts, so one override covers the whole chain.
+- **The subform's drag-to-reorder is native, not a library** — `joomla-field-subform.js`
+  wires plain HTML5 `draggable` to whatever carries the `.group-move` class, inside a
+  `.subform-repeatable-group` wrapper. Keep those two classes on a custom row layout and
+  reordering, and its up/down-button fallback, keep working with no extra code.

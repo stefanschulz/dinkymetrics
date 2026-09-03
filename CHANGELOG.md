@@ -3,6 +3,14 @@
 All notable changes to `mod_dinkymetrics` are documented here.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- The Figures list now shows a collapsed one-line summary per row (caption,
+  source, short configuration) instead of every field spelled out, expanding
+  for the full editor. Adding, removing and reordering a row — including
+  drag-to-reorder — are unchanged Joomla subform behaviour.
+
 ## [1.0.0] - 2026-09-03
 
 First release. A site module that prints a row of key figures — a number plus a
