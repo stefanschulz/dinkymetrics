@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- DinkyMetrics logo. Rounded-square field (following the shared convention across
+     this author's Joomla extensions, e.g. sitesnap's logo.svg — a rounded rect frame is
+     the one element they have in common; colour and pictogram are otherwise free), a
+     graphite field with a brass counter readout, and the rightmost digit caught
+     mid-roll (bottom of the outgoing "1", top sliver of the incoming "2") the way a
+     mechanical odometer wheel looks mid-turn. See mark.svg for the reduced small-size
+     version and .doc/WORKPLAN.md for the design discussion. -->
+<svg width="100%" height="100%" viewBox="0 0 1080 1080" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;">
+    <defs>
+        <clipPath id="rollTop">
+            <rect x="17" y="-34" width="35" height="34"/>
+        </clipPath>
+        <clipPath id="rollBottom">
+            <rect x="17" y="0" width="35" height="34"/>
+        </clipPath>
+    </defs>
+    <g transform="translate(540,540) scale(5.4)">
+        <rect x="-90" y="-90" width="180" height="180" rx="34" style="fill:rgb(27,35,44);"/>
+        <rect x="-52" y="-34" width="104" height="68" rx="10" style="fill:none;stroke:rgb(224,161,61);stroke-width:3px;"/>
+        <line x1="-17" y1="-30" x2="-17" y2="30" style="stroke:rgb(224,161,61);stroke-width:2px;"/>
+        <line x1="17" y1="-30" x2="17" y2="30" style="stroke:rgb(224,161,61);stroke-width:2px;"/>
+        <text x="-34" y="12" style="font-family:'JetBrains Mono','Courier New',monospace;font-weight:700;font-size:30px;fill:rgb(224,161,61);text-anchor:middle;">3</text>
+        <text x="0" y="12" style="font-family:'JetBrains Mono','Courier New',monospace;font-weight:700;font-size:30px;fill:rgb(224,161,61);text-anchor:middle;">4</text>
+        <text x="34" y="22" clip-path="url(#rollBottom)" style="font-family:'JetBrains Mono','Courier New',monospace;font-weight:700;font-size:30px;fill:rgb(224,161,61);text-anchor:middle;">1</text>
+        <text x="34" y="-24" clip-path="url(#rollTop)" style="font-family:'JetBrains Mono','Courier New',monospace;font-weight:700;font-size:30px;fill:rgb(224,161,61);text-anchor:middle;">2</text>
+    </g>
+</svg>

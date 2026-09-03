@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="DinkyMetrics">
+	<title>DinkyMetrics</title>
+	<!-- Reduced from logo.svg for small sizes (favicon, JED listing thumbnail): the
+	     three-window counter frame survives at 16px, individual digits do not, so the
+	     rolling third window keeps only its two stacked, gapped chips as an abstract
+	     stand-in for a mid-turn digit. currentColor so it recolours with its context. -->
+	<rect x="2.5" y="5.5" width="19" height="13" rx="3"/>
+	<line x1="8.83" y1="6.5" x2="8.83" y2="17.5"/>
+	<line x1="15.17" y1="6.5" x2="15.17" y2="17.5"/>
+	<rect x="16.6" y="7.6" width="3.3" height="2.8" rx="0.9" fill="currentColor" stroke="none"/>
+	<rect x="16.6" y="13.6" width="3.3" height="2.8" rx="0.9" fill="currentColor" stroke="none"/>
+</svg>
