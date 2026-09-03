@@ -20,9 +20,9 @@
         <rect x="-52" y="-34" width="104" height="68" rx="10" style="fill:none;stroke:rgb(224,161,61);stroke-width:3px;"/>
         <line x1="-17" y1="-30" x2="-17" y2="30" style="stroke:rgb(224,161,61);stroke-width:2px;"/>
         <line x1="17" y1="-30" x2="17" y2="30" style="stroke:rgb(224,161,61);stroke-width:2px;"/>
-        <text x="-34" y="12" style="font-family:'JetBrains Mono','Courier New',monospace;font-weight:700;font-size:30px;fill:rgb(224,161,61);text-anchor:middle;">3</text>
-        <text x="0" y="12" style="font-family:'JetBrains Mono','Courier New',monospace;font-weight:700;font-size:30px;fill:rgb(224,161,61);text-anchor:middle;">4</text>
-        <text x="34" y="22" clip-path="url(#rollBottom)" style="font-family:'JetBrains Mono','Courier New',monospace;font-weight:700;font-size:30px;fill:rgb(224,161,61);text-anchor:middle;">1</text>
-        <text x="34" y="-24" clip-path="url(#rollTop)" style="font-family:'JetBrains Mono','Courier New',monospace;font-weight:700;font-size:30px;fill:rgb(224,161,61);text-anchor:middle;">2</text>
+        <text x="-34" y="12" style="font-family:'Cascadia Mono','Consolas','Courier New',monospace;font-weight:700;font-size:30px;fill:rgb(224,161,61);text-anchor:middle;">3</text>
+        <text x="0" y="12" style="font-family:'Cascadia Mono','Consolas','Courier New',monospace;font-weight:700;font-size:30px;fill:rgb(224,161,61);text-anchor:middle;">4</text>
+        <text x="34" y="22" clip-path="url(#rollBottom)" style="font-family:'Cascadia Mono','Consolas','Courier New',monospace;font-weight:700;font-size:30px;fill:rgb(224,161,61);text-anchor:middle;">1</text>
+        <text x="34" y="-24" clip-path="url(#rollTop)" style="font-family:'Cascadia Mono','Consolas','Courier New',monospace;font-weight:700;font-size:30px;fill:rgb(224,161,61);text-anchor:middle;">2</text>
     </g>
 </svg>
