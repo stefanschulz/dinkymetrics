@@ -92,7 +92,11 @@ Break any of these and something subtle goes wrong, so they are worth stating pl
    call in the JS have to agree, or the figure visibly changes when the tween ends.
    `tests/parity/cases.json` is the shared truth; both sides are tested against it. ICU
    defaults to half-even rounding and `Intl.NumberFormat` to half-away-from-zero, so the
-   PHP side sets `ROUND_HALFUP` explicitly.
+   PHP side sets `ROUND_HALFUP` explicitly. Decimal places are a ceiling on both sides
+   (`MIN_FRACTION_DIGITS=0` / `MAX_FRACTION_DIGITS=$decimals`, matching
+   `Intl.NumberFormat`'s default `minimumFractionDigits` of 0) — a whole-number figure
+   never grows a fake ".0" just because the instance's decimal setting serves some other,
+   genuinely fractional figure in the same list.
 3. **The tween ends on the server's string, not on a recomputed one.** The JS captures
    `textContent` at start and writes it back at the end; no rounding step can drift.
 4. **`resolve()` dispatches on `source` only.** Joomla's subform saves *every* field of

@@ -64,8 +64,9 @@ const countUp = (value, options) => {
   let formatter;
 
   try {
+    // No minimumFractionDigits: "decimals" is a ceiling, matching the server (see
+    // src/Helper/Formatter.php) — a whole-number figure counts up as "30", not "30.0".
     formatter = new Intl.NumberFormat(options.locale, {
-      minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
       useGrouping: value.dataset.grouping !== '0',
     });

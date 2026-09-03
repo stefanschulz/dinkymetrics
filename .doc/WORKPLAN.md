@@ -969,6 +969,61 @@ frisch gebauten Paket bestätigt.
 
 ---
 
+## Nachbesserung: Nachkommastellen als Obergrenze, nicht feste Breite
+
+Gemeldet: „Jahre", „Beitraege", „Hervorgehoben" und „Kategorien" erschienen als
+Dezimalzahl (`30.0`, `8.0` …), obwohl es sich um Ganzzahlen handelt. Ursache:
+`format_decimals` ist eine **globale** Instanzeinstellung, und `Formatter`
+setzte sie bislang über `NumberFormatter::FRACTION_DIGITS` — eine **feste**
+Nachkommastellenzahl, die jede Zahl auf genau diese Breite auffüllt. Für die
+Instanz mit `format_decimals=1` (wegen „Feste Zahl" = 1234,5) bekamen dadurch
+auch alle anderen, ganzzahligen Kennzahlen ein erzwungenes `,0` angehängt.
+
+**Nicht** einfach `format_decimals` global auf 0 setzen: „Feste Zahl" mit
+1234,5 soll die Nachkommastelle ausdrücklich behalten — nur die vier
+Kennzahlen, deren Quelle (`years_since`, `content_count`, `category_count`)
+immer eine Ganzzahl liefert, sollen nie eine erhalten. Die Lösung liegt daher
+im Formatierer, nicht in der Konfiguration: `format_decimals` ist jetzt eine
+**Obergrenze**, keine feste Breite — exakt das Verhalten von
+`Intl.NumberFormat`, wenn `minimumFractionDigits` auf seinem Standardwert `0`
+bleibt und nur `maximumFractionDigits` gesetzt wird. Vorher im Node-REPL und
+via `NumberFormatter::MIN_FRACTION_DIGITS`/`MAX_FRACTION_DIGITS` gegengeprüft,
+dass beide Seiten für dieselben Eingaben identisch runden und kürzen (u. a.
+`1234.96` mit einer Nachkommastelle → `1.235`, nicht `1.235,0`) — erst danach
+an Formatter.php, dinkymetrics.js und den Paritäts-Fixtures geändert.
+
+Drei Stellen mussten im Gleichschritt angepasst werden, sonst würde die
+Animation auf einem anderen String enden als der Server gerendert hat
+(Invariante 2 aus `.doc/ARCHITECTURE.md`):
+
+- `Formatter::__construct()` — `MIN_FRACTION_DIGITS=0` statt
+  `FRACTION_DIGITS=$decimals`. Für den `intl`-losen Fallback (kein natives
+  Analogon zu Min/Max) baut `format()` jetzt zweistufig: erst mit
+  `number_format()` korrekt auf die konfigurierte Obergrenze runden, dann
+  überzählige Nullen von der neutralen Punkt-Schreibweise abschneiden, dann
+  erst mit den tatsächlich benötigten Nachkommastellen und den
+  locale-korrekten Trennzeichen final formatieren. Ein reiner
+  Float-Vergleich (`$rounded === $wert`) wäre hier die falsche Abkürzung
+  gewesen — Rundungsfehler bei Fließkommazahlen hätten das unzuverlässig
+  gemacht.
+- `dinkymetrics.js` — `minimumFractionDigits` aus dem `Intl.NumberFormat`-Aufruf
+  der Zählanimation entfernt.
+- `tests/parity/cases.json` (33 statt 25 Fälle) + `parity.mjs` — neu erzeugt
+  mit der Obergrenzen-Semantik; acht neue Fälle gezielt für dieses Verhalten
+  (Ganzzahl mit hoher erlaubter Nachkommastellenzahl, ein Wert, der erst durch
+  Rundung zur Ganzzahl wird, ein Wert, der weniger Nachkommastellen braucht
+  als erlaubt).
+
+**Verifiziert:** Frontend zeigt „Jahre 30", „Beitraege 8" usw. ohne
+Nachkommastelle, „Feste Zahl" weiterhin `1.234,5`; die kontrollierte-Uhr-Probe
+bestätigt, dass die Zählanimation exakt auf denselben Strings endet, die der
+Server gerendert hat — keine Diskrepanz für ganzzahlige wie für gebrochene
+Werte. `tests/Integration/counts.php` (18/18) unverändert grün, da die
+Zähl-Queries selbst nicht betroffen sind. Erneut auf Joomla 6.1.3 per
+Upgrade-Installation aus dem frisch gebauten Paket bestätigt.
+
+---
+
 ## v1.1+ (nicht jetzt)
 
 Weitere Quellen über `resolve()` (`#__users`, `#__contact_details`, Tags,

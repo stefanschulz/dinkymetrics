@@ -12,6 +12,13 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   dialog instead of an inline expand. Adding a figure has one button, in the
   toolbar. Reordering, adding, removing and the drag mechanics themselves are
   unchanged Joomla subform behaviour.
+- **Decimal places** is now a ceiling, not a fixed width: a count or a
+  time-since figure — always a whole number — shows as one ("30") regardless
+  of the instance's decimal setting, instead of padding to "30.0". A literal
+  figure that genuinely carries a fraction still shows it, up to the
+  configured maximum. Matches `Intl.NumberFormat`'s own default behaviour
+  with `minimumFractionDigits` left unset, on both the server and the
+  count-up animation.
 
 ## [1.0.0] - 2026-09-03
 

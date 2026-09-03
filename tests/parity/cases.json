@@ -39,7 +39,7 @@
     "locale": "en-GB",
     "decimals": 2,
     "grouping": true,
-    "expected": "0.00"
+    "expected": "0"
   },
   {
     "value": 1234.5,
@@ -173,5 +173,61 @@
     "decimals": 1,
     "grouping": true,
     "expected": "1,234.5"
+  },
+  {
+    "value": 30,
+    "locale": "de-DE",
+    "decimals": 1,
+    "grouping": true,
+    "expected": "30"
+  },
+  {
+    "value": 8,
+    "locale": "en-GB",
+    "decimals": 1,
+    "grouping": false,
+    "expected": "8"
+  },
+  {
+    "value": 1234,
+    "locale": "de-DE",
+    "decimals": 2,
+    "grouping": true,
+    "expected": "1.234"
+  },
+  {
+    "value": 0,
+    "locale": "en-GB",
+    "decimals": 1,
+    "grouping": true,
+    "expected": "0"
+  },
+  {
+    "value": -8,
+    "locale": "de-DE",
+    "decimals": 1,
+    "grouping": true,
+    "expected": "-8"
+  },
+  {
+    "value": 1234.96,
+    "locale": "de-DE",
+    "decimals": 1,
+    "grouping": true,
+    "expected": "1.235"
+  },
+  {
+    "value": 1234.96,
+    "locale": "en-GB",
+    "decimals": 1,
+    "grouping": false,
+    "expected": "1235"
+  },
+  {
+    "value": 1234.1,
+    "locale": "de-DE",
+    "decimals": 2,
+    "grouping": true,
+    "expected": "1.234,1"
   }
 ]

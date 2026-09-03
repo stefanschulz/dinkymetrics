@@ -25,11 +25,17 @@ namespace TheLoom\Module\DinkyMetrics\Site\Helper;
  * own formatting into an element whose server-rendered content was written here. Any
  * difference would show up as the number visibly changing when the animation finishes.
  *
- * Two details carry that parity:
+ * Three details carry that parity:
  *
  * - Rounding. ICU defaults to half-even ("banker's rounding"), Intl.NumberFormat defaults
  *   to halfExpand (half away from zero). 2.5 with no decimals is 2 under the first and 3
  *   under the second, so the rounding mode is set explicitly.
+ * - Decimals are a ceiling, not a fixed width. "Decimal places" configures the *most* a
+ *   figure may show, the same way Intl.NumberFormat's maximumFractionDigits works with
+ *   its minimumFractionDigits left at the default of 0: a years_since or content_count
+ *   figure is always a whole number and appears as one ("30", not "30.0") regardless of
+ *   the setting, while a literal figure that genuinely carries a fraction ("1234.5")
+ *   still shows it, up to the configured maximum.
  * - The intl extension. With it, both sides are the same ICU implementation. Without it
  *   the fallback below only knows a handful of separator conventions; see isExact().
  */
@@ -62,7 +68,8 @@ final class Formatter
 
     /**
      * @param   string  $locale    BCP-47 tag, already normalised by normaliseLocale().
-     * @param   int     $decimals  Fixed number of decimal places, 0 or more.
+     * @param   int     $decimals  Maximum number of decimal places, 0 or more. A value
+     *                             needing fewer shows fewer; trailing zeros are trimmed.
      * @param   bool    $grouping  Whether to separate thousands.
      */
     public function __construct(
@@ -75,7 +82,8 @@ final class Formatter
         }
 
         $formatter = new \NumberFormatter($this->locale, \NumberFormatter::DECIMAL);
-        $formatter->setAttribute(\NumberFormatter::FRACTION_DIGITS, max(0, $this->decimals));
+        $formatter->setAttribute(\NumberFormatter::MIN_FRACTION_DIGITS, 0);
+        $formatter->setAttribute(\NumberFormatter::MAX_FRACTION_DIGITS, max(0, $this->decimals));
         $formatter->setAttribute(\NumberFormatter::GROUPING_USED, $this->grouping ? 1 : 0);
 
         // Match Intl.NumberFormat's default roundingMode "halfExpand", not ICU's half-even.
@@ -103,12 +111,15 @@ final class Formatter
 
         [$decimalPoint, $thousandsSeparator] = self::fallbackSeparators($this->locale);
 
-        return number_format(
-            (float) $value,
-            max(0, $this->decimals),
-            $decimalPoint,
-            $this->grouping ? $thousandsSeparator : ''
-        );
+        // number_format() always pads to the exact width given, so the "ceiling, not a
+        // fixed width" behaviour above needs a second pass: round with a neutral '.' via
+        // number_format's own correct rounding, trim the trailing zeros it left behind,
+        // then measure what actually remains and render that with the real separators.
+        $rounded  = number_format($value, max(0, $this->decimals), '.', '');
+        $trimmed  = str_contains($rounded, '.') ? rtrim(rtrim($rounded, '0'), '.') : $rounded;
+        $decimals = str_contains($trimmed, '.') ? \strlen($trimmed) - strpos($trimmed, '.') - 1 : 0;
+
+        return number_format((float) $trimmed, $decimals, $decimalPoint, $this->grouping ? $thousandsSeparator : '');
     }
 
     /**

@@ -65,6 +65,12 @@ on the site, so counting them would overstate what a visitor can actually find. 
 instance. Leave the format empty to follow the site language, or give a language tag such
 as `de-DE`.
 
+**Decimal places is a ceiling, not a fixed width.** A count or a time-since figure is
+always a whole number and is shown as one — "30", never "30.0" — no matter what the
+instance's decimal setting is; a literal figure that genuinely carries a fraction still
+shows it, up to that many places. Set it for the one figure in the list that needs
+decimals; the whole-number ones are unaffected.
+
 Server and browser must format identically, or a figure would visibly change when the
 animation finishes. The module uses PHP's `intl` extension, which is the same ICU
 implementation the browser's `Intl.NumberFormat` uses. **Without `intl`** a small fallback

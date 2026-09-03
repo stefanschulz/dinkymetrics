@@ -90,10 +90,21 @@ final class FormatterTest extends TestCase
         $this->assertSame('1.400', (new Formatter('de-DE', 0, true))->format(1400));
     }
 
-    public function testDecimalsArePaddedNotJustTruncated(): void
+    /**
+     * "Decimal places" is a ceiling, not a fixed width — the whole point for this
+     * module's count / years-since figures, which are always whole numbers and must
+     * never grow a fake ".00" just because the instance's format is set to two decimals
+     * for the sake of some other, genuinely fractional figure in the same list.
+     */
+    public function testDecimalsAreACeilingNotAPaddedWidth(): void
     {
-        $this->assertSame('42.00', (new Formatter('en-GB', 2, false))->format(42));
+        $this->assertSame('42', (new Formatter('en-GB', 2, false))->format(42));
         $this->assertSame('42', (new Formatter('en-GB', 0, false))->format(42));
+        $this->assertSame('42.5', (new Formatter('en-GB', 2, false))->format(42.5));
+
+        // A value that rounds up to a whole number drops the decimal too, not just a
+        // value that already was one.
+        $this->assertSame('1,235', (new Formatter('en-GB', 1, true))->format(1234.96));
     }
 
     /**

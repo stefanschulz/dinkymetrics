@@ -27,10 +27,13 @@ const cases = JSON.parse(readFileSync(join(here, 'cases.json'), 'utf8'));
 /**
  * Format exactly the way media/mod_dinkymetrics/js/dinkymetrics.js has to.
  * Keep the two in step: this is the reference implementation of that one line.
+ *
+ * No minimumFractionDigits: "decimals" is a ceiling, not a fixed width, so a whole
+ * number formats as "30", not "30.0" — matching src/Helper/Formatter.php's
+ * MIN_FRACTION_DIGITS=0 / MAX_FRACTION_DIGITS=$decimals.
  */
 const format = (value, locale, decimals, grouping) =>
   new Intl.NumberFormat(locale, {
-    minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
     useGrouping: grouping,
   }).format(value);
