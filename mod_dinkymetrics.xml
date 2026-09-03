@@ -1,0 +1,401 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="module" client="site" method="upgrade">
+    <name>mod_dinkymetrics</name>
+    <author>The Loom / Stefan Schulz</author>
+    <creationDate>2026-09</creationDate>
+    <copyright>Copyright (C) 2026 The Loom / Stefan Schulz. All rights reserved.</copyright>
+    <license>GNU General Public License version 3 or later; see LICENSE.txt</license>
+    <authorEmail>schulz@the-loom.de</authorEmail>
+    <authorUrl>https://www.the-loom.de</authorUrl>
+    <version>1.0.0</version>
+    <description>MOD_DINKYMETRICS_XML_DESCRIPTION</description>
+
+    <namespace path="src">TheLoom\Module\DinkyMetrics</namespace>
+
+    <!--
+        Language files stay inside the extension folder (no <languages> block): Joomla
+        falls back to <client path>/modules/mod_dinkymetrics for both the .ini and the
+        .sys.ini, so a symlinked dev checkout and an installed ZIP behave identically.
+    -->
+    <files>
+        <folder module="mod_dinkymetrics">services</folder>
+        <folder>src</folder>
+        <folder>tmpl</folder>
+        <folder>language</folder>
+    </files>
+
+    <!-- css/ and js/ must be their own folders: files placed flat here are dropped silently. -->
+    <media destination="mod_dinkymetrics" folder="media/mod_dinkymetrics">
+        <folder>css</folder>
+        <folder>js</folder>
+        <filename>joomla.asset.json</filename>
+    </media>
+
+    <config>
+        <fields name="params">
+
+            <fieldset name="basic">
+
+                <field name="figures"
+                       type="subform"
+                       multiple="true"
+                       layout="joomla.form.field.subform.repeatable"
+                       label="MOD_DINKYMETRICS_PARAM_FIGURES_LABEL"
+                       description="MOD_DINKYMETRICS_PARAM_FIGURES_DESC">
+
+                    <form name="figures_row" repeat="true">
+
+                        <field name="label"
+                               type="text"
+                               label="MOD_DINKYMETRICS_FIGURE_LABEL_LABEL"
+                               description="MOD_DINKYMETRICS_FIGURE_LABEL_DESC"
+                               required="true"/>
+
+                        <field name="source"
+                               type="list"
+                               label="MOD_DINKYMETRICS_FIGURE_SOURCE_LABEL"
+                               description="MOD_DINKYMETRICS_FIGURE_SOURCE_DESC"
+                               default="literal"
+                               validate="options">
+                            <option value="literal">MOD_DINKYMETRICS_FIGURE_SOURCE_LITERAL</option>
+                            <option value="years_since">MOD_DINKYMETRICS_FIGURE_SOURCE_YEARS_SINCE</option>
+                            <option value="content_count">MOD_DINKYMETRICS_FIGURE_SOURCE_CONTENT_COUNT</option>
+                            <option value="category_count">MOD_DINKYMETRICS_FIGURE_SOURCE_CATEGORY_COUNT</option>
+                        </field>
+
+                        <field name="value"
+                               type="number"
+                               label="MOD_DINKYMETRICS_FIGURE_VALUE_LABEL"
+                               description="MOD_DINKYMETRICS_FIGURE_VALUE_DESC"
+                               step="any"
+                               showon="source:literal"/>
+
+                        <!--
+                            Deliberately a text field, not type="calendar": in a subform row
+                            added on the client, Joomla renames the input but not the calendar
+                            button's id / data-inputfield, so the picker stays wired to the
+                            "figuresX" template row and a picked date is silently dropped.
+                            See .doc/WORKPLAN.md, risk R2.
+                        -->
+                        <field name="date"
+                               type="text"
+                               label="MOD_DINKYMETRICS_FIGURE_DATE_LABEL"
+                               description="MOD_DINKYMETRICS_FIGURE_DATE_DESC"
+                               hint="YYYY-MM-DD"
+                               pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}([ T][0-9]{2}:[0-9]{2}(:[0-9]{2})?)?"
+                               showon="source:years_since"/>
+
+                        <field name="unit"
+                               type="list"
+                               label="MOD_DINKYMETRICS_FIGURE_UNIT_LABEL"
+                               description="MOD_DINKYMETRICS_FIGURE_UNIT_DESC"
+                               default="years"
+                               validate="options"
+                               showon="source:years_since">
+                            <option value="years">MOD_DINKYMETRICS_FIGURE_UNIT_YEARS</option>
+                            <option value="months">MOD_DINKYMETRICS_FIGURE_UNIT_MONTHS</option>
+                            <option value="days">MOD_DINKYMETRICS_FIGURE_UNIT_DAYS</option>
+                        </field>
+
+                        <field name="category"
+                               type="category"
+                               extension="com_content"
+                               label="MOD_DINKYMETRICS_FIGURE_CATEGORY_LABEL"
+                               description="MOD_DINKYMETRICS_FIGURE_CATEGORY_DESC"
+                               default=""
+                               showon="source:content_count">
+                            <option value="">MOD_DINKYMETRICS_FIGURE_CATEGORY_ALL</option>
+                        </field>
+
+                        <field name="include_children"
+                               type="radio"
+                               layout="joomla.form.field.radio.switcher"
+                               label="MOD_DINKYMETRICS_FIGURE_INCLUDE_CHILDREN_LABEL"
+                               description="MOD_DINKYMETRICS_FIGURE_INCLUDE_CHILDREN_DESC"
+                               default="yes"
+                               validate="options"
+                               showon="source:content_count">
+                            <option value="no">JNO</option>
+                            <option value="yes">JYES</option>
+                        </field>
+
+                        <field name="featured"
+                               type="list"
+                               label="MOD_DINKYMETRICS_FIGURE_FEATURED_LABEL"
+                               description="MOD_DINKYMETRICS_FIGURE_FEATURED_DESC"
+                               default="any"
+                               validate="options"
+                               showon="source:content_count">
+                            <option value="any">MOD_DINKYMETRICS_FIGURE_FEATURED_ANY</option>
+                            <option value="only">MOD_DINKYMETRICS_FIGURE_FEATURED_ONLY</option>
+                            <option value="exclude">MOD_DINKYMETRICS_FIGURE_FEATURED_EXCLUDE</option>
+                        </field>
+
+                        <field name="extension"
+                               type="list"
+                               label="MOD_DINKYMETRICS_FIGURE_EXTENSION_LABEL"
+                               description="MOD_DINKYMETRICS_FIGURE_EXTENSION_DESC"
+                               default="com_content"
+                               validate="options"
+                               showon="source:category_count">
+                            <option value="com_content">MOD_DINKYMETRICS_FIGURE_EXTENSION_CONTENT</option>
+                            <option value="com_contact">MOD_DINKYMETRICS_FIGURE_EXTENSION_CONTACT</option>
+                            <option value="com_newsfeeds">MOD_DINKYMETRICS_FIGURE_EXTENSION_NEWSFEEDS</option>
+                            <option value="com_banners">MOD_DINKYMETRICS_FIGURE_EXTENSION_BANNERS</option>
+                        </field>
+
+                        <field name="parent"
+                               type="category"
+                               extension="com_content"
+                               label="MOD_DINKYMETRICS_FIGURE_PARENT_LABEL"
+                               description="MOD_DINKYMETRICS_FIGURE_PARENT_DESC"
+                               default=""
+                               showon="source:category_count[AND]extension:com_content">
+                            <option value="">MOD_DINKYMETRICS_FIGURE_PARENT_ALL</option>
+                        </field>
+
+                        <field name="include_children_cat"
+                               type="radio"
+                               layout="joomla.form.field.radio.switcher"
+                               label="MOD_DINKYMETRICS_FIGURE_INCLUDE_CHILDREN_CAT_LABEL"
+                               description="MOD_DINKYMETRICS_FIGURE_INCLUDE_CHILDREN_CAT_DESC"
+                               default="no"
+                               validate="options"
+                               showon="source:category_count">
+                            <option value="no">JNO</option>
+                            <option value="yes">JYES</option>
+                        </field>
+
+                        <field name="skip_empty"
+                               type="radio"
+                               layout="joomla.form.field.radio.switcher"
+                               label="MOD_DINKYMETRICS_FIGURE_SKIP_EMPTY_LABEL"
+                               description="MOD_DINKYMETRICS_FIGURE_SKIP_EMPTY_DESC"
+                               default="no"
+                               validate="options"
+                               showon="source:category_count[AND]extension:com_content">
+                            <option value="no">JNO</option>
+                            <option value="yes">JYES</option>
+                        </field>
+
+                        <field name="state"
+                               type="list"
+                               label="MOD_DINKYMETRICS_FIGURE_STATE_LABEL"
+                               description="MOD_DINKYMETRICS_FIGURE_STATE_DESC"
+                               default="published"
+                               validate="options"
+                               showon="source:content_count[OR]source:category_count">
+                            <option value="published">MOD_DINKYMETRICS_FIGURE_STATE_PUBLISHED</option>
+                            <option value="published_unpublished">MOD_DINKYMETRICS_FIGURE_STATE_PUBLISHED_UNPUBLISHED</option>
+                            <option value="any">MOD_DINKYMETRICS_FIGURE_STATE_ANY</option>
+                        </field>
+
+                        <field name="prefix"
+                               type="text"
+                               label="MOD_DINKYMETRICS_FIGURE_PREFIX_LABEL"
+                               description="MOD_DINKYMETRICS_FIGURE_PREFIX_DESC"/>
+
+                        <field name="suffix"
+                               type="text"
+                               label="MOD_DINKYMETRICS_FIGURE_SUFFIX_LABEL"
+                               description="MOD_DINKYMETRICS_FIGURE_SUFFIX_DESC"/>
+
+                        <field name="link"
+                               type="url"
+                               relative="true"
+                               label="MOD_DINKYMETRICS_FIGURE_LINK_LABEL"
+                               description="MOD_DINKYMETRICS_FIGURE_LINK_DESC"/>
+
+                    </form>
+                </field>
+
+            </fieldset>
+
+            <fieldset name="animation" label="MOD_DINKYMETRICS_FIELDSET_ANIMATION">
+
+                <field name="animate"
+                       type="radio"
+                       layout="joomla.form.field.radio.switcher"
+                       label="MOD_DINKYMETRICS_PARAM_ANIMATE_LABEL"
+                       description="MOD_DINKYMETRICS_PARAM_ANIMATE_DESC"
+                       default="yes"
+                       validate="options">
+                    <option value="no">JNO</option>
+                    <option value="yes">JYES</option>
+                </field>
+
+                <field name="animate_trigger"
+                       type="list"
+                       label="MOD_DINKYMETRICS_PARAM_ANIMATE_TRIGGER_LABEL"
+                       description="MOD_DINKYMETRICS_PARAM_ANIMATE_TRIGGER_DESC"
+                       default="in-view"
+                       validate="options"
+                       showon="animate:yes">
+                    <option value="in-view">MOD_DINKYMETRICS_PARAM_ANIMATE_TRIGGER_IN_VIEW</option>
+                    <option value="on-load">MOD_DINKYMETRICS_PARAM_ANIMATE_TRIGGER_ON_LOAD</option>
+                </field>
+
+                <field name="animate_threshold"
+                       type="number"
+                       label="MOD_DINKYMETRICS_PARAM_ANIMATE_THRESHOLD_LABEL"
+                       description="MOD_DINKYMETRICS_PARAM_ANIMATE_THRESHOLD_DESC"
+                       default="0.35"
+                       min="0"
+                       max="1"
+                       step="0.05"
+                       showon="animate:yes[AND]animate_trigger:in-view"/>
+
+                <field name="animate_duration"
+                       type="number"
+                       label="MOD_DINKYMETRICS_PARAM_ANIMATE_DURATION_LABEL"
+                       description="MOD_DINKYMETRICS_PARAM_ANIMATE_DURATION_DESC"
+                       default="1600"
+                       min="200"
+                       max="10000"
+                       step="100"
+                       filter="integer"
+                       showon="animate:yes"/>
+
+                <field name="animate_easing"
+                       type="list"
+                       label="MOD_DINKYMETRICS_PARAM_ANIMATE_EASING_LABEL"
+                       description="MOD_DINKYMETRICS_PARAM_ANIMATE_EASING_DESC"
+                       default="ease-out"
+                       validate="options"
+                       showon="animate:yes">
+                    <option value="linear">MOD_DINKYMETRICS_PARAM_ANIMATE_EASING_LINEAR</option>
+                    <option value="ease-out">MOD_DINKYMETRICS_PARAM_ANIMATE_EASING_EASE_OUT</option>
+                    <option value="ease-in-out">MOD_DINKYMETRICS_PARAM_ANIMATE_EASING_EASE_IN_OUT</option>
+                </field>
+
+                <field name="animate_from"
+                       type="number"
+                       label="MOD_DINKYMETRICS_PARAM_ANIMATE_FROM_LABEL"
+                       description="MOD_DINKYMETRICS_PARAM_ANIMATE_FROM_DESC"
+                       default="0"
+                       step="any"
+                       showon="animate:yes"/>
+
+                <field name="respect_reduced_motion"
+                       type="radio"
+                       layout="joomla.form.field.radio.switcher"
+                       label="MOD_DINKYMETRICS_PARAM_RESPECT_REDUCED_MOTION_LABEL"
+                       description="MOD_DINKYMETRICS_PARAM_RESPECT_REDUCED_MOTION_DESC"
+                       default="yes"
+                       validate="options"
+                       showon="animate:yes">
+                    <option value="no">JNO</option>
+                    <option value="yes">JYES</option>
+                </field>
+
+            </fieldset>
+
+            <fieldset name="figures_format" label="MOD_DINKYMETRICS_FIELDSET_FORMAT">
+
+                <field name="format_grouping"
+                       type="radio"
+                       layout="joomla.form.field.radio.switcher"
+                       label="MOD_DINKYMETRICS_PARAM_FORMAT_GROUPING_LABEL"
+                       description="MOD_DINKYMETRICS_PARAM_FORMAT_GROUPING_DESC"
+                       default="yes"
+                       validate="options">
+                    <option value="no">JNO</option>
+                    <option value="yes">JYES</option>
+                </field>
+
+                <field name="format_decimals"
+                       type="number"
+                       label="MOD_DINKYMETRICS_PARAM_FORMAT_DECIMALS_LABEL"
+                       description="MOD_DINKYMETRICS_PARAM_FORMAT_DECIMALS_DESC"
+                       default="0"
+                       min="0"
+                       max="6"
+                       step="1"
+                       filter="integer"/>
+
+                <field name="format_locale"
+                       type="text"
+                       label="MOD_DINKYMETRICS_PARAM_FORMAT_LOCALE_LABEL"
+                       description="MOD_DINKYMETRICS_PARAM_FORMAT_LOCALE_DESC"
+                       hint="de-DE"/>
+
+                <field name="count_all_access"
+                       type="radio"
+                       layout="joomla.form.field.radio.switcher"
+                       label="MOD_DINKYMETRICS_PARAM_COUNT_ALL_ACCESS_LABEL"
+                       description="MOD_DINKYMETRICS_PARAM_COUNT_ALL_ACCESS_DESC"
+                       default="no"
+                       validate="options">
+                    <option value="no">JNO</option>
+                    <option value="yes">JYES</option>
+                </field>
+
+                <field name="debug"
+                       type="radio"
+                       layout="joomla.form.field.radio.switcher"
+                       label="MOD_DINKYMETRICS_PARAM_DEBUG_LABEL"
+                       description="MOD_DINKYMETRICS_PARAM_DEBUG_DESC"
+                       default="0"
+                       validate="options">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+
+            </fieldset>
+
+            <!--
+                Exactly the five fields a core module declares (cf. mod_articles_news).
+                The chrome / tag / header fields of the Advanced tab are injected by
+                com_modules itself — declaring them here duplicates the tab, and
+                validate="moduleChrome" is not even a registered rule (only
+                ModuleLayoutRule exists), which makes saving fail outright.
+            -->
+            <fieldset name="advanced">
+
+                <field name="layout"
+                       type="modulelayout"
+                       label="JFIELD_ALT_LAYOUT_LABEL"
+                       class="form-select"
+                       validate="moduleLayout"/>
+
+                <field name="moduleclass_sfx"
+                       type="textarea"
+                       label="COM_MODULES_FIELD_MODULECLASS_SFX_LABEL"
+                       rows="3"
+                       validate="CssIdentifier"/>
+
+                <field name="cache"
+                       type="list"
+                       label="COM_MODULES_FIELD_CACHING_LABEL"
+                       default="1"
+                       filter="integer"
+                       validate="options">
+                    <option value="1">JGLOBAL_USE_GLOBAL</option>
+                    <option value="0">COM_MODULES_FIELD_VALUE_NOCACHING</option>
+                </field>
+
+                <field name="cache_time"
+                       type="number"
+                       label="COM_MODULES_FIELD_CACHE_TIME_LABEL"
+                       default="900"
+                       filter="integer"/>
+
+                <!-- 'id' rather than core's 'itemid': see decision E1 in .doc/WORKPLAN.md. -->
+                <field name="cachemode"
+                       type="hidden"
+                       default="id">
+                    <option value="id"></option>
+                </field>
+
+            </fieldset>
+
+        </fields>
+    </config>
+
+    <updateservers>
+        <server type="extension" priority="1" name="mod_dinkymetrics">
+            https://www.the-loom.de/extensions/dinkymetrics/update.xml
+        </server>
+    </updateservers>
+
+</extension>

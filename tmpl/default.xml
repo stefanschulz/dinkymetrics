@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+    <layout title="MOD_DINKYMETRICS_LAYOUT_DEFAULT" option="MOD_DINKYMETRICS_LAYOUT_DEFAULT_OPTION">
+        <help key="MOD_DINKYMETRICS_LAYOUT_DEFAULT_DESC"/>
+        <message>
+            <![CDATA[MOD_DINKYMETRICS_LAYOUT_DEFAULT_DESC]]>
+        </message>
+    </layout>
+</metadata>
