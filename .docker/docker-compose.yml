@@ -1,0 +1,60 @@
+name: dinkymetrics-test
+
+# Persistent local test/dev stack for mod_dinkymetrics (Joomla 5).
+# Routed by the shared Traefik proxy at http://dinkymetrics.localhost/
+# (joins the dev-proxy network + labels; no host ports published).
+#
+# The working tree is mounted read-only at /repo and symlinked into
+# modules/mod_dinkymetrics/ + media/mod_dinkymetrics/ by setup.sh, so edits are
+# live in the container (PHP opcache revalidates within ~2s; CSS/JS are served
+# straight from the symlink). Only manifest changes need a re-discover — see
+# README.md.
+
+services:
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: rootpw
+      MARIADB_DATABASE: joomla
+      MARIADB_USER: joomla
+      MARIADB_PASSWORD: joomlapw
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - db-data:/var/lib/mysql
+    networks: [internal]
+
+  joomla:
+    image: joomla:5-apache
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      JOOMLA_DB_HOST: db
+      JOOMLA_DB_USER: joomla
+      JOOMLA_DB_PASSWORD: joomlapw
+      JOOMLA_DB_NAME: joomla
+    volumes:
+      - html-data:/var/www/html
+      - ..:/repo:ro
+    networks: [internal, dev-proxy]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=dev-proxy"
+      - "traefik.http.routers.dinkymetrics.rule=Host(`dinkymetrics.localhost`)"
+      - "traefik.http.routers.dinkymetrics.entrypoints=web"
+      - "traefik.http.services.dinkymetrics.loadbalancer.server.port=80"
+
+volumes:
+  db-data:
+  html-data:
+
+networks:
+  internal:
+  dev-proxy:
+    external: true

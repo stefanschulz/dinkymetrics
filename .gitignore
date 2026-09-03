@@ -704,9 +704,7 @@
 /robots.txt.dist
 /web.config.txt
 /.idea
-/.doc
 /.releases
-/.docker
 /vendor
 /composer.lock
 /.phpunit.cache
