@@ -5,22 +5,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Changed
-- The Figures list now shows a one-line summary per row (caption, source,
-  short configuration) — a drag handle, up/down buttons, an edit (pencil)
-  button and a delete (trash) button. Editing opens the full field set in a
-  dialog instead of an inline expand. Adding a figure has one button, in the
-  toolbar. Reordering, adding, removing and the drag mechanics themselves are
-  unchanged Joomla subform behaviour.
-- **Decimal places** is now a ceiling, not a fixed width: a count or a
-  time-since figure — always a whole number — shows as one ("30") regardless
-  of the instance's decimal setting, instead of padding to "30.0". A literal
-  figure that genuinely carries a fraction still shows it, up to the
-  configured maximum. Matches `Intl.NumberFormat`'s own default behaviour
-  with `minimumFractionDigits` left unset, on both the server and the
-  count-up animation.
-
-## [1.0.0] - 2026-09-03
+## [1.0.0] - 2026-11-06
 
 First release. A site module that prints a row of key figures — a number plus a
 caption each — with an optional count-up animation.
@@ -43,6 +28,11 @@ caption each — with an optional count-up animation.
   that is not a usable URL yields no link rather than a broken one.
 - Rows without a caption, and rows whose value cannot be worked out, are skipped.
   With no figures at all the module renders nothing — not even an empty wrapper.
+- The Figures list shows a one-line summary per row (caption, source, short
+  configuration) with a drag handle, up/down buttons, an edit (pencil) button and
+  a delete (trash) button. Editing opens the full field set in a dialog; adding a
+  figure has one button, in the toolbar. Reordering, adding, removing and the drag
+  mechanics are Joomla's own subform behaviour.
 
 **Output**
 - The markup contract from the specification: BEM classes, `role="list"`, prefix
@@ -66,8 +56,13 @@ caption each — with an optional count-up animation.
   animated and static instances with a single shared script.
 
 **Numbers**
-- Thousands grouping, a fixed number of decimal places, and a number format that
-  follows the site language or an explicit language tag.
+- Thousands grouping, decimal places and a number format that follows the site
+  language or an explicit language tag.
+- Decimal places are a ceiling, not a fixed width: a count or a time-since figure
+  — always a whole number — shows as "30" whatever the instance's setting, while a
+  literal figure that carries a fraction still shows it, up to the configured
+  maximum. This is `Intl.NumberFormat`'s own default, on the server and in the
+  count-up alike.
 - Server and browser formatting are pinned to each other, including the
   half-away-from-zero rounding that `Intl.NumberFormat` uses and ICU does not.
   Without the `intl` extension a fallback covers the common European conventions
