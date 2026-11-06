@@ -1,0 +1,98 @@
+name: Release
+
+# Pushing a tag vX.Y.Z publishes that version: the version numbers must all match the
+# tag, the whole CI must pass, and the release notes are taken from that version's
+# section of CHANGELOG.md. The ZIP people download is the one CI built, checked and
+# installed into Joomla 5 and 6. If any step fails, nothing is published.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Tag, versions and release notes
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - name: The tag matches every version number
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if ! [[ "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo "::error::The tag $TAG is not of the form vX.Y.Z."
+            exit 1
+          fi
+          VERSION="${BASH_REMATCH[1]}"
+          php bin/check-version.php --expect="$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          tr -d '\r' < CHANGELOG.md \
+            | awk -v v="$VERSION" 'index($0, "## [" v "]") == 1 { found = 1; next } found && /^## / { exit } found { print }' \
+            > release-notes.md
+          if ! grep -q '[^[:space:]]' release-notes.md; then
+            echo "::error::CHANGELOG.md has no section '## [$VERSION] - ...' with notes."
+            exit 1
+          fi
+          # Changes listed under [Unreleased] are not part of any version yet; shipping a
+          # tag with a non-empty Unreleased section means they go out unannounced.
+          if tr -d '\r' < CHANGELOG.md \
+              | awk '/^## \[Unreleased\]/ { found = 1; next } found && /^## / { exit } found { print }' \
+              | grep -q '[^[:space:]]'; then
+            echo "::warning::CHANGELOG.md still has entries under [Unreleased]; they are not in these release notes."
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: release-notes.md
+          if-no-files-found: error
+
+  ci:
+    name: CI
+    needs: verify
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    name: Publish the GitHub release
+    needs: [verify, ci]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: mod_dinkymetrics-package
+          path: release
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+          path: release
+
+      # update.xml describes the ZIP for Joomla's update server (its download URL points
+      # at the-loom.de, where it is meant to be uploaded next to the ZIP); it is attached
+      # here so the checksums that go with this exact ZIP travel with it.
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "release/mod_dinkymetrics-$VERSION.zip" \
+            "release/update.xml" \
+            --repo "$GITHUB_REPOSITORY" --title "DinkyMetrics $VERSION" \
+            --notes-file release/release-notes.md --verify-tag

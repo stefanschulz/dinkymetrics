@@ -1,0 +1,157 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Syntax (PHP ${{ matrix.php }}) and consistency
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # README: "PHP 8.1 - 8.4".
+        php: ['8.1', '8.2', '8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      - name: php -l on the module, tests and tooling
+        run: find src services tmpl layouts tests bin -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: The manifest, the update description and the asset registry parse
+        run: |
+          xmllint --noout mod_dinkymetrics.xml build.xml phpcs.xml.dist phpunit.xml.dist tmpl/*.xml
+          jq empty media/mod_dinkymetrics/joomla.asset.json tests/parity/cases.json
+      - name: Every version number agrees
+        run: php bin/check-version.php
+      - name: Language files agree with each other and with their users
+        run: php bin/check-language.php
+
+  standard:
+    name: Coding standard (PSR-12)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer
+      - run: composer install --no-interaction --prefer-dist
+      - run: composer lint
+
+  unit:
+    name: Unit (PHP ${{ matrix.php }}, ${{ matrix.intl }} intl)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # PHPUnit 11 needs PHP 8.2+.
+        php: ['8.2', '8.3', '8.4']
+        # The formatter's primary path is ICU through ext-intl; without it a fallback
+        # takes over. Both are shipped code, so both are tested.
+        intl: ['with', 'without']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: ${{ matrix.intl == 'with' && 'intl' || ':intl' }}
+          coverage: none
+          tools: composer
+      - name: Which formatter path this run exercises
+        run: |
+          php -r 'echo extension_loaded("intl") ? "intl, ICU " . INTL_ICU_VERSION : "no intl (fallback)", PHP_EOL;'
+      - run: composer install --no-interaction --prefer-dist
+      - run: composer test
+
+  parity:
+    name: Number-format parity (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      # Intl.NumberFormat against tests/parity/cases.json, the file the PHP unit tests read too.
+      - run: node tests/parity/parity.mjs
+
+  package:
+    name: Build and check the release ZIP
+    runs-on: ubuntu-latest
+    needs: [lint, standard, unit, parity]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: zip
+          coverage: none
+          tools: composer
+      - name: Install Phing
+        run: |
+          composer global require --no-interaction phing/phing:^3.0
+          composer global config bin-dir --absolute --quiet >> "$GITHUB_PATH"
+      - run: phing package
+      - run: php bin/check-package.php .releases/mod_dinkymetrics-*.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mod_dinkymetrics-package
+          # .releases/ is a dot-folder, which upload-artifact skips by default.
+          include-hidden-files: true
+          path: |
+            .releases/mod_dinkymetrics-*.zip
+            .releases/update.xml
+          if-no-files-found: error
+
+  integration:
+    name: Integration (Joomla ${{ matrix.joomla }})
+    runs-on: ubuntu-latest
+    needs: [package]
+    strategy:
+      fail-fast: false
+      matrix:
+        joomla: ['5', '6']
+    env:
+      JOOMLA_TAG: ${{ matrix.joomla }}
+      CI_JOOMLA_PORT: '8280'
+      COMPOSE_FILE: .docker/ci-compose.yml
+    steps:
+      - uses: actions/checkout@v4
+      # What is installed below is the very ZIP the package job built and checked.
+      - uses: actions/download-artifact@v4
+        with:
+          name: mod_dinkymetrics-package
+          path: .releases
+      - name: Start a throwaway Joomla, install the ZIP, load the fixtures
+        run: bash bin/ci-seed-joomla.sh
+      - name: The counting queries against the fixture matrix
+        run: docker compose exec -T joomla php /repo/tests/Integration/counts.php
+      - name: The module renders on the front page
+        run: |
+          page="$(curl -fsS "http://localhost:$CI_JOOMLA_PORT/")"
+          instances="$(grep -o 'class="mod-dinkymetrics"' <<< "$page" | wc -l)"
+          values="$(grep -o 'mod-dinkymetrics__value' <<< "$page" | wc -l)"
+          echo "module instances: $instances, figures: $values"
+          # The fixtures put two instances in Cassiopeia's sidebar on every page.
+          [ "$instances" -eq 2 ] || { echo "::error::expected the 2 fixture instances on the front page"; exit 1; }
+          [ "$values" -ge 2 ] || { echo "::error::the instances rendered no figures"; exit 1; }
+          if grep -q 'MOD_DINKYMETRICS_' <<< "$page"; then
+            echo "::error::a language key shows up untranslated on the front page"
+            exit 1
+          fi
+      - name: Joomla logs
+        if: failure()
+        run: docker compose logs --tail=100

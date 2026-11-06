@@ -106,3 +106,16 @@ http://dinkymetrics6.localhost/ that installs the module **from the built ZIP**
 instead of symlinking it — that is what verifies the manifest and the `<media>`
 layout. Use it for the acceptance pass once `phing package` produces
 `.releases/mod_dinkymetrics-<version>.zip`.
+
+## CI stack
+
+`ci-compose.yml` is a third, self-contained stack for the GitHub workflow: no Traefik, a
+published port, nothing persistent. `bin/ci-seed-joomla.sh` provisions it (headless install,
+module from the built ZIP, fixtures), then `tests/Integration/counts.php` runs inside it.
+To try it locally on a spare port, after `phing package`:
+
+```bash
+JOOMLA_TAG=6 CI_JOOMLA_PORT=8281 COMPOSE_FILE=.docker/ci-compose.yml bash bin/ci-seed-joomla.sh
+JOOMLA_TAG=6 COMPOSE_FILE=.docker/ci-compose.yml docker compose exec -T joomla php /repo/tests/Integration/counts.php
+JOOMLA_TAG=6 COMPOSE_FILE=.docker/ci-compose.yml docker compose down -v
+```

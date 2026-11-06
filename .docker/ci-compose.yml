@@ -1,0 +1,42 @@
+# Disposable Joomla for the integration check - used by CI and runnable locally on a
+# spare port without touching the dev stack (no Traefik, nothing persistent):
+#
+#   JOOMLA_TAG=6 CI_JOOMLA_PORT=8281 docker compose -f .docker/ci-compose.yml up -d
+#   JOOMLA_TAG=6 CI_JOOMLA_PORT=8281 bash bin/ci-seed-joomla.sh
+#
+# Unlike docker-compose.yml, which symlinks the working tree, this installs the module
+# from the BUILT ZIP (.releases/), so what is tested is what would be released.
+name: dinkymetrics-ci
+
+services:
+  db:
+    image: mariadb:11.4
+    environment:
+      MARIADB_ROOT_PASSWORD: rootpw
+      MARIADB_DATABASE: joomla
+      MARIADB_USER: joomla
+      MARIADB_PASSWORD: joomlapw
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  joomla:
+    image: joomla:${JOOMLA_TAG:-5}-apache
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${CI_JOOMLA_PORT:-8280}:80"
+    environment:
+      JOOMLA_DB_HOST: db
+      JOOMLA_DB_USER: joomla
+      JOOMLA_DB_PASSWORD: joomlapw
+      JOOMLA_DB_NAME: joomla
+    volumes:
+      - html-data:/var/www/html
+      - ..:/repo:ro
+
+volumes:
+  html-data:

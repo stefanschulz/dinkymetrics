@@ -709,3 +709,7 @@
 /composer.lock
 /.phpunit.cache
 !/LICENSE.txt
+
+# CI tooling lives in bin/; Joomla's own /bin/* rule above is for a CMS checkout, not for this repository.
+!/bin/*.php
+!/bin/*.sh

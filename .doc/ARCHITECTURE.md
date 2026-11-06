@@ -51,6 +51,8 @@ dinkymetrics/
 │   ├── Unit/                         # Formatter + Elapsed, no Joomla needed
 │   ├── Integration/counts.php        # The counting queries against the .docker fixtures
 │   └── parity/                       # cases.json + parity.mjs — server ↔ browser formatting
+├── bin/                              # check-version, check-language, check-package, ci-seed-joomla.sh
+├── .github/workflows/                # ci.yml (every push / PR) and release.yml (tag vX.Y.Z)
 └── build.xml                         # Phing target `package`: zip + update.xml with checksums
 ```
 
@@ -122,6 +124,31 @@ The helper is a plain `class` (not `final`) and `resolve()` is public, so a site
 subclass it instead of patching.
 
 ---
+
+## Continuous integration and releasing
+
+`.github/workflows/ci.yml` runs on every push to `main`, every pull request, and when the
+release workflow calls it:
+
+| Job | What it checks |
+|---|---|
+| **lint** (PHP 8.1–8.4) | `php -l` on everything, the manifest / asset registry / JSON parse, `bin/check-version.php`, `bin/check-language.php` |
+| **standard** | `composer lint` (PSR-12) |
+| **unit** (PHP 8.2–8.4, with *and* without `intl`) | PHPUnit. Both formatter paths are shipped code, so both run |
+| **parity** (Node 22, 24) | `Intl.NumberFormat` against `tests/parity/cases.json` |
+| **package** | `phing package`, then `bin/check-package.php` — the ZIP against the manifest it carries, in both directions |
+| **integration** (Joomla 5, 6) | The *built ZIP* installed into a throwaway Joomla (`.docker/ci-compose.yml` + `bin/ci-seed-joomla.sh`), `counts.php` against the fixtures, and a front-page request that must show both fixture instances |
+
+Integration needs the package job, so what is tested is the file that would be released.
+The same check runs locally on a spare port — see the header of `.docker/ci-compose.yml`.
+
+**To release:** move the `[Unreleased]` entries of `CHANGELOG.md` under a new
+`## [X.Y.Z] - date` heading, set the version in `mod_dinkymetrics.xml` and in the *Version* line
+at the top of this file, commit, then push a tag `vX.Y.Z`. `release.yml` refuses to go on unless
+the tag and all three version numbers agree and that CHANGELOG section has notes; it then runs the
+whole CI and publishes the GitHub release with the checked ZIP and its `update.xml`. The
+`update.xml` still has to be uploaded to the update server by hand — its download URL points at
+`the-loom.de`, not at GitHub.
 
 ## Traps that cost time here
 
