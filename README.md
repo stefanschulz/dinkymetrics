@@ -181,6 +181,8 @@ helper is public and documented as overridable. See `.doc/ARCHITECTURE.md`.
 
 ## Development
 
+This module was developed with AI assistance (Claude Code).
+
 The working tree *is* the extension — `mod_dinkymetrics.xml` sits at the repository root,
 and the `.gitignore` is Joomla's own root ignore list, so the repo can be checked out into
 a Joomla installation with only the module's files tracked.
