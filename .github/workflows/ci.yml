@@ -28,7 +28,10 @@ jobs:
         run: find src services tmpl layouts tests bin -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: The manifest, the update description and the asset registry parse
         run: |
-          xmllint --noout mod_dinkymetrics.xml build.xml phpcs.xml.dist phpunit.xml.dist tmpl/*.xml
+          # $f and $argv below are PHP variables, not shell ones.
+          # shellcheck disable=SC2016
+          php -r 'foreach (array_slice($argv, 1) as $f) { if (simplexml_load_file($f) === false) { exit(1); } echo "ok  $f\n"; }' \
+            mod_dinkymetrics.xml build.xml phpcs.xml.dist phpunit.xml.dist tmpl/*.xml
           jq empty media/mod_dinkymetrics/joomla.asset.json tests/parity/cases.json
       - name: Every version number agrees
         run: php bin/check-version.php
