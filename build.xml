@@ -24,6 +24,7 @@
             <fileset dir="." defaultexcludes="true">
                 <exclude name=".*"/>
                 <exclude name=".*/**"/>
+                <exclude name="bin/**"/>
                 <exclude name="build.xml"/>
                 <exclude name="CHANGELOG.md"/>
                 <exclude name="README.md"/>
